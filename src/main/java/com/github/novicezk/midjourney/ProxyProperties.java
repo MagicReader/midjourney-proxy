@@ -3,14 +3,14 @@ package com.github.novicezk.midjourney;
 import com.github.novicezk.midjourney.enums.TranslateWay;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.List;
 
 @Data
-@Component
 @ConfigurationProperties(prefix = "mj")
 public class ProxyProperties {
+  
 	/**
 	 * task存储配置.
 	 */
@@ -56,138 +56,161 @@ public class ProxyProperties {
 	 */
 	private boolean includeTaskExtended = false;
 
-	@Data
-	public static class DiscordConfig {
-		/**
-		 * 你的服务器id.
-		 */
-		private String guildId;
-		/**
-		 * 你的频道id.
-		 */
-		private String channelId;
-		/**
-		 * 你的登录token.
-		 */
-		private String userToken;
-		/**
-		 * 你的频道id.
-		 */
-		private String sessionId = "9c4055428e13bcbf2248a6b36084c5f3";
-		/**
-		 * 调用discord接口、连接wss时的user-agent.
-		 */
-		private String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
-		/**
-		 * 是否使用user_token连接wss，默认启用.
-		 */
-		private boolean userWss = true;
-		/**
-		 * 你的机器人token.
-		 */
-		private String botToken;
-	}
 
-	@Data
-	public static class BaiduTranslateConfig {
-		/**
-		 * 百度翻译的APP_ID.
-		 */
-		private String appid;
-		/**
-		 * 百度翻译的密钥.
-		 */
-		private String appSecret;
-	}
+    @Data
+    public static class DiscordConfig {
+        /**
+         * 多账号配置
+         */
+        private List<DiscordAccountConfig> discordAccountConfigList;
 
-	@Data
-	public static class OpenaiConfig {
-		/**
-		 * gpt的api-key.
-		 */
-		private String gptApiKey;
-		/**
-		 * 超时时间.
-		 */
-		private Duration timeout = Duration.ofSeconds(30);
-		/**
-		 * 使用的模型.
-		 */
-		private String model = "gpt-3.5-turbo";
-		/**
-		 * 返回结果的最大分词数.
-		 */
-		private int maxTokens = 2048;
-		/**
-		 * 相似度，取值 0-2.
-		 */
-		private double temperature = 0;
-	}
+        /**
+         * 调用discord接口、连接wss时的user-agent.
+         */
+        private String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
+        /**
+         * 是否使用user_token连接wss，默认启用.
+         */
+        private boolean userWss = true;
 
-	@Data
-	public static class TaskStore {
-		/**
-		 * 任务过期时间，默认30天.
-		 */
-		private Duration timeout = Duration.ofDays(30);
-		/**
-		 * 任务存储方式: redis(默认)、in_memory.
-		 */
-		private Type type = Type.IN_MEMORY;
+        /**
+         * 你的机器人token.
+         */
+        private List<BotTokenConfig> botTokenConfigList;
 
-		public enum Type {
-			/**
-			 * redis.
-			 */
-			REDIS,
-			/**
-			 * in_memory.
-			 */
-			IN_MEMORY
-		}
-	}
+        @Data
+        public static class DiscordAccountConfig {
+            /**
+             * 你的服务器id.
+             */
+            private String guildId;
+            /**
+             * 你的频道id.
+             */
+            private String channelId;
+            /**
+             * 你的登录token.
+             */
+            private String userToken;
+            /**
+             * 你的会话id.
+             */
+            private String sessionId = "9c4055428e13bcbf2248a6b36084c5f3";
+        }
 
-	@Data
-	public static class ProxyConfig {
-		/**
-		 * 代理host.
-		 */
-		private String host;
-		/**
-		 * 代理端口.
-		 */
-		private Integer port;
-	}
+        @Data
+        public static class BotTokenConfig {
+            /**
+             * 你的机器人token.
+             */
+            private String botToken;
+            /**
+             * 你的频道id.
+             */
+            private String channelId;
+        }
+    }
 
-	@Data
-	public static class NgDiscordConfig {
-		/**
-		 * https://discord.com 反代.
-		 */
-		private String server;
-		/**
-		 * https://cdn.discordapp.com 反代.
-		 */
-		private String cdn;
-		/**
-		 * wss://gateway.discord.gg 反代.
-		 */
-		private String wss;
-	}
+    @Data
+    public static class BaiduTranslateConfig {
+        /**
+         * 百度翻译的APP_ID.
+         */
+        private String appid;
+        /**
+         * 百度翻译的密钥.
+         */
+        private String appSecret;
+    }
 
-	@Data
-	public static class TaskQueueConfig {
-		/**
-		 * 并发数.
-		 */
-		private int coreSize = 3;
-		/**
-		 * 等待队列长度.
-		 */
-		private int queueSize = 10;
-		/**
-		 * 任务超时时间(分钟).
-		 */
-		private int timeoutMinutes = 5;
-	}
+    @Data
+    public static class OpenaiConfig {
+        /**
+         * gpt的api-key.
+         */
+        private String gptApiKey;
+        /**
+         * 超时时间.
+         */
+        private Duration timeout = Duration.ofSeconds(30);
+        /**
+         * 使用的模型.
+         */
+        private String model = "gpt-3.5-turbo";
+        /**
+         * 返回结果的最大分词数.
+         */
+        private int maxTokens = 2048;
+        /**
+         * 相似度，取值 0-2.
+         */
+        private double temperature = 0;
+    }
+
+    @Data
+    public static class TaskStore {
+        /**
+         * 任务过期时间，默认30天.
+         */
+        private Duration timeout = Duration.ofDays(30);
+        /**
+         * 任务存储方式: redis(默认)、in_memory.
+         */
+        private Type type = Type.IN_MEMORY;
+
+        public enum Type {
+            /**
+             * redis.
+             */
+            REDIS,
+            /**
+             * in_memory.
+             */
+            IN_MEMORY
+        }
+    }
+
+    @Data
+    public static class ProxyConfig {
+        /**
+         * 代理host.
+         */
+        private String host;
+        /**
+         * 代理端口.
+         */
+        private Integer port;
+    }
+
+    @Data
+    public static class NgDiscordConfig {
+        /**
+         * https://discord.com 反代.
+         */
+        private String server;
+        /**
+         * https://cdn.discordapp.com 反代.
+         */
+        private String cdn;
+        /**
+         * wss://gateway.discord.gg 反代.
+         */
+        private String wss;
+    }
+
+    @Data
+    public static class TaskQueueConfig {
+        /**
+         * 并发数.
+         */
+        private int coreSize = 3;
+        /**
+         * 等待队列长度.
+         */
+        private int queueSize = 10;
+        /**
+         * 任务超时时间(分钟).
+         */
+        private int timeoutMinutes = 5;
+    }
 }
