@@ -1,0 +1,9 @@
+mj:
+  proxy:
+    host: 127.0.0.1
+    port: 7890
+spring:
+  redis:
+    host: task2.cyou-inc.com
+    port: 6379
+    database: 9

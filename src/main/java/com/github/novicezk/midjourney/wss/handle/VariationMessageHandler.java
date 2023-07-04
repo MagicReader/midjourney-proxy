@@ -41,11 +41,11 @@ public class VariationMessageHandler extends MessageHandler {
 			if (start != null) {
 				// 开始
 				TaskCondition condition = new TaskCondition()
-						.setFinalPromptEn(start.getPrompt())
 						.setActionSet(Set.of(TaskAction.VARIATION))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
+				// fix bug
 				Task task = this.taskQueueHelper.findRunningTask(condition)
-						.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "V" + start.getIndex()))
+						.filter(t -> CharSequenceUtil.startWith(t.getPromptEn(), start.getPrompt()))
 						.min(Comparator.comparing(Task::getSubmitTime))
 						.orElse(null);
 				if (task == null) {
@@ -61,10 +61,10 @@ public class VariationMessageHandler extends MessageHandler {
 				return;
 			}
 			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(end.getPrompt())
 					.setActionSet(Set.of(TaskAction.VARIATION))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
 			Task task = this.taskQueueHelper.findRunningTask(condition)
+					.filter(t -> CharSequenceUtil.startWith(t.getPromptEn(), end.getPrompt()))
 					.max(Comparator.comparing(Task::getProgress))
 					.orElse(null);
 			if (task == null) {
