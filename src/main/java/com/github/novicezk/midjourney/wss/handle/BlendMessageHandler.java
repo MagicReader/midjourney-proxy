@@ -15,10 +15,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +29,8 @@ import java.util.regex.Pattern;
 @Component
 public class BlendMessageHandler extends MessageHandler {
 	private static final String CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - <@\\d+> \\((.*?)\\)";
+
+	private static final HashMap map = new HashMap<>();
 
 	@Override
 	public void handle(MessageType messageType, DataObject message) {
@@ -53,7 +52,12 @@ public class BlendMessageHandler extends MessageHandler {
 					return;
 				}
 				String url = getRealUrl(urls.get(0));
-				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
+//				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
+				//从url中拿到taskId,将prompt与taskId建立关联
+				String[] split = url.split("/");
+				String taskId = split[split.length - 1];
+				taskId = taskId.split("\\.")[0];
+				map.put(parseData.getPrompt(), taskId);
 				TaskCondition condition = new TaskCondition()
 						.setId(taskId)
 						.setActionSet(Set.of(TaskAction.BLEND))
@@ -68,24 +72,26 @@ public class BlendMessageHandler extends MessageHandler {
 				task.setStatus(TaskStatus.IN_PROGRESS);
 				task.awake();
 			} else {
+				String taskId = (String) map.get(parseData.getPrompt());
 				// 完成
 				TaskCondition condition = new TaskCondition()
+						.setId(taskId)
 						.setActionSet(Set.of(TaskAction.BLEND))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-				Task task = this.taskQueueHelper.findRunningTask(condition)
-						.max(Comparator.comparing(Task::getProgress))
-						.orElse(null);
+				Task task = this.taskQueueHelper.findRunningTask(condition).findFirst().orElse(null);
 				if (task == null) {
 					return;
 				}
 				task.setProperty(Constants.TASK_PROPERTY_FINAL_PROMPT, parseData.getPrompt());
 				finishTask(task, message);
 				task.awake();
+				map.remove(parseData.getPrompt());
 			}
 		} else if (MessageType.UPDATE == messageType) {
+			String taskId = (String) map.get(parseData.getPrompt());
 			// 进度
 			TaskCondition condition = new TaskCondition()
-					.setProgressMessageId(message.getString("id"))
+					.setId(taskId)
 					.setActionSet(Set.of(TaskAction.BLEND))
 					.setStatusSet(Set.of(TaskStatus.IN_PROGRESS));
 			Task task = this.taskQueueHelper.findRunningTask(condition).findFirst().orElse(null);
