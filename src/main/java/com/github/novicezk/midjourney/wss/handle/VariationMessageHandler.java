@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
  * 开始(create): Making variations for image #1 with prompt **cat** - <@1012983546824114217> (Waiting to start)
  * 进度(update): **cat** - Variations (Strong) by <@1012983546824114217> (0%) (relaxed)
  * 5.2前-进度(update): **cat** - Variations by <@1012983546824114217> (0%) (relaxed)
- * 完成(create): **cat** - Variations (Strong) by <@1012983546824114217> (relaxed)
+ * 完成(create): **cat** - Variations (Strong或Subtle) by <@1012983546824114217> (relaxed)
  * 5.2前-完成(create): **cat** - Variations by <@1012983546824114217> (relaxed)
  */
 @Slf4j
@@ -31,11 +32,16 @@ import java.util.regex.Pattern;
 public class VariationMessageHandler extends MessageHandler {
 	private static final String START_CONTENT_REGEX = "Making variations for image #(\\d) with prompt \\*\\*(.*?)\\*\\* - <@\\d+> \\((.*?)\\)";
 	private static final String OLD_CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Variations by <@\\d+> \\((.*?)\\)";
-	private static final String CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Variations \\(Strong\\) by <@\\d+> \\((.*?)\\)";
+	private static final String CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Variations \\(.*?\\) by <@\\d+> \\((.*?)\\)";
+
+	private Predicate<Task> taskPredicate(TaskCondition condition, String prompt) {
+		return condition.and(t -> t.getPromptEn().startsWith(prompt));
+	}
 
 	@Override
 	public void handle(MessageType messageType, DataObject message) {
 		String content = getMessageContent(message);
+		String realPrompt;
 		if (MessageType.CREATE.equals(messageType)) {
 			UVContentParseData start = parseStart(content);
 			if (start != null) {
@@ -43,11 +49,9 @@ public class VariationMessageHandler extends MessageHandler {
 				TaskCondition condition = new TaskCondition()
 						.setActionSet(Set.of(TaskAction.VARIATION))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-				// fix bug
-				Task task = this.taskQueueHelper.findRunningTask(condition)
-						.filter(t -> CharSequenceUtil.startWith(t.getPromptEn(), start.getPrompt()))
-						.min(Comparator.comparing(Task::getSubmitTime))
-						.orElse(null);
+				realPrompt = this.discordHelper.getRealPrompt(start.getPrompt());
+				Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
+						.findFirst().orElse(null);
 				if (task == null) {
 					return;
 				}
@@ -60,13 +64,12 @@ public class VariationMessageHandler extends MessageHandler {
 			if (end == null) {
 				return;
 			}
+			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.VARIATION))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
-					.filter(t -> CharSequenceUtil.startWith(t.getPromptEn(), end.getPrompt()))
-					.max(Comparator.comparing(Task::getProgress))
-					.orElse(null);
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
+					.findFirst().orElse(null);;
 			if (task == null) {
 				return;
 			}
@@ -74,14 +77,15 @@ public class VariationMessageHandler extends MessageHandler {
 			task.awake();
 		} else if (MessageType.UPDATE == messageType) {
 			UVContentParseData parseData = parse(content);
-			if (parseData == null || CharSequenceUtil.equalsAny(parseData.getStatus(), "relaxed", "fast")) {
+			if (parseData == null || CharSequenceUtil.equalsAny(parseData.getStatus(), "relaxed")) {
 				return;
 			}
 			TaskCondition condition = new TaskCondition()
 					.setProgressMessageId(message.getString("id"))
 					.setActionSet(Set.of(TaskAction.VARIATION))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
+			realPrompt = this.discordHelper.getRealPrompt(parseData.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
 					.findFirst().orElse(null);
 			if (task == null) {
 				return;
