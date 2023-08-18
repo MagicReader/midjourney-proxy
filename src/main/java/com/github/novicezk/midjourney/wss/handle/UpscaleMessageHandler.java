@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,19 +32,24 @@ public class UpscaleMessageHandler extends MessageHandler {
 	private static final String END_CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Image #(\\d) <@\\d+>";
 	private static final String END2_CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Upscaled by <@\\d+> \\((.*?)\\)";
 
+	private Predicate<Task> taskPredicate(TaskCondition condition, String prompt) {
+		return condition.and(t -> t.getPromptEn().startsWith(prompt));
+	}
+
 	@Override
 	public void handle(MessageType messageType, DataObject message) {
 		if (MessageType.CREATE != messageType) {
 			return;
 		}
+		String realPrompt;
 		String content = getMessageContent(message);
 		UVContentParseData start = parseStart(content);
 		if (start != null) {
 			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(start.getPrompt())
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
+			realPrompt = this.discordHelper.getRealPrompt(start.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
 					.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "U" + start.getIndex()))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
@@ -57,10 +63,10 @@ public class UpscaleMessageHandler extends MessageHandler {
 		UVContentParseData end = parseEnd(content);
 		if (end != null) {
 			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(end.getPrompt())
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
+			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
 					.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "U" + end.getIndex()))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
@@ -74,10 +80,10 @@ public class UpscaleMessageHandler extends MessageHandler {
 		UVContentParseData end2 = parseEnd2(content);
 		if (end2 != null) {
 			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(end2.getPrompt())
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
+			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
 			if (task == null) {
