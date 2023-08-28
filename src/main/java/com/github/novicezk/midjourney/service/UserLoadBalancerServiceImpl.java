@@ -35,7 +35,7 @@ public class UserLoadBalancerServiceImpl implements LoadBalancerService {
      * @return DiscordAccountConfig
      */
     @Override
-    public ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key) {
+    public synchronized ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key) {
         if(Objects.isNull(discordAccountConfigMap)){
             this.initDiscordAccountConfigMap();
         }
@@ -46,7 +46,7 @@ public class UserLoadBalancerServiceImpl implements LoadBalancerService {
      * 获取所有key
      * @return String
      */
-    private synchronized void initDiscordAccountConfigMap() {
+    private void initDiscordAccountConfigMap() {
         List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList();
         discordAccountConfigMap = discordAccountConfigList.stream().collect(Collectors.toMap(x -> x.getGuildId() + ":" + x.getChannelId(), Function.identity()));
     }
