@@ -8,6 +8,7 @@ import eu.maxschuster.dataurl.DataUrl;
 import java.util.List;
 
 public interface DiscordService {
+	Message<Void> info();
 
 	Message<Void> imagine(String prompt);
 

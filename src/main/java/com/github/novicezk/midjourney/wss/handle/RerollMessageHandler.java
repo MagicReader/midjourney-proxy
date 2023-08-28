@@ -2,7 +2,6 @@ package com.github.novicezk.midjourney.wss.handle;
 
 
 import com.github.novicezk.midjourney.enums.MessageType;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataObject;
 
 /**
@@ -20,8 +19,4 @@ public class RerollMessageHandler extends MessageHandler {
 
 	}
 
-	@Override
-	public void handle(MessageType messageType, Message message) {
-
-	}
 }

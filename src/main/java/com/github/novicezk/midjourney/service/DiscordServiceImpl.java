@@ -42,7 +42,17 @@ public class DiscordServiceImpl implements DiscordService {
     private final String describeParamsJson;
     private final String blendParamsJson;
     private final String messageParamsJson;
+    private final String infoParamsJson;
     private final RestTemplate restTemplate;
+
+    @Override
+    public Message<Void> info() {
+        String paramsStr = this.infoParamsJson.replace("$guild_id", this.discordGuildId)
+                .replace("$channel_id", this.discordChannelId)
+                .replace("$session_id", this.discordSessionId);
+        JSONObject params = new JSONObject(paramsStr);
+        return postJsonAndCheckStatus(params.toString());
+    }
 
     @Override
     public Message<Void> imagine(String prompt) {

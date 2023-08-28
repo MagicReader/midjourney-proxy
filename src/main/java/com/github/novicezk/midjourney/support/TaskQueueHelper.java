@@ -73,23 +73,27 @@ public class TaskQueueHelper {
     public SubmitResultVO submitTask(Task task, Callable<Message<Void>> discordSubmit) {
         this.taskStoreService.save(task);
         int size;
+        SubmitResultVO submitResultVO;
         try {
             size = this.taskExecutor.getThreadPoolExecutor().getQueue().size();
             Future<?> future = this.taskExecutor.submit(() -> executeTask(task, discordSubmit));
             this.taskFutureMap.put(task.getId(), future);
+            if (size == 0) {
+                submitResultVO = SubmitResultVO.of(ReturnCode.SUCCESS, "提交成功", task.getId());
+            } else {
+                submitResultVO = SubmitResultVO.of(ReturnCode.IN_QUEUE, "排队中，前面还有" + size + "个任务", task.getId())
+                        .setProperty("numberOfQueues", size);
+            }
         } catch (RejectedExecutionException e) {
             this.taskStoreService.delete(task.getId());
-            return SubmitResultVO.fail(ReturnCode.QUEUE_REJECTED, "队列已满，请稍后尝试");
+            submitResultVO = SubmitResultVO.fail(ReturnCode.QUEUE_REJECTED, "队列已满，请稍后尝试");
         } catch (Exception e) {
             log.error("submit task error", e);
-            return SubmitResultVO.fail(ReturnCode.FAILURE, "提交失败，系统异常");
+            submitResultVO = SubmitResultVO.fail(ReturnCode.FAILURE, "提交失败，系统异常");
         }
-        if (size == 0) {
-            return SubmitResultVO.of(ReturnCode.SUCCESS, "提交成功", task.getId());
-        } else {
-            return SubmitResultVO.of(ReturnCode.IN_QUEUE, "排队中，前面还有" + size + "个任务", task.getId())
-                    .setProperty("numberOfQueues", size);
-        }
+        submitResultVO.setGuildId(task.getGuildId());
+        submitResultVO.setChannelId(task.getChannelId());
+        return submitResultVO;
     }
 
     private void executeTask(Task task, Callable<Message<Void>> discordSubmit) {

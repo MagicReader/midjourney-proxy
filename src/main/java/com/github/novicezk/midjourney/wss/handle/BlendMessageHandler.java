@@ -11,7 +11,6 @@ import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.ContentParseData;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.springframework.stereotype.Component;
 
@@ -99,71 +98,6 @@ public class BlendMessageHandler extends MessageHandler {
 				return;
 			}
 			task.setProperty(Constants.TASK_PROPERTY_PROGRESS_MESSAGE_ID, message.getString("id"));
-			task.setProgress(parseData.getStatus());
-			task.setImageUrl(getImageUrl(message));
-			task.awake();
-		}
-	}
-
-	@Override
-	public void handle(MessageType messageType, Message message) {
-		String content = message.getContentRaw();
-		boolean match = CharSequenceUtil.startWith(content, "**<" + DiscordHelper.SIMPLE_URL_PREFIX) || (message.getInteraction() != null && "blend".equals(message.getInteraction().getName()));
-		if (!match) {
-			return;
-		}
-		ContentParseData parseData = parse(content);
-		if (parseData == null) {
-			return;
-		}
-		if (MessageType.CREATE == messageType) {
-			if ("Waiting to start".equals(parseData.getStatus())) {
-				// 开始
-				List<String> urls = CharSequenceUtil.split(parseData.getPrompt(), " ");
-				if (urls.isEmpty()) {
-					return;
-				}
-				String url = getRealUrl(urls.get(0));
-				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
-				TaskCondition condition = new TaskCondition()
-						.setId(taskId)
-						.setActionSet(Set.of(TaskAction.BLEND))
-						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-				Task task = this.taskQueueHelper.findRunningTask(condition).findFirst().orElse(null);
-				if (task == null) {
-					return;
-				}
-				task.setProperty(Constants.TASK_PROPERTY_PROGRESS_MESSAGE_ID, message.getId());
-				task.setPrompt(parseData.getPrompt());
-				task.setPromptEn(parseData.getPrompt());
-				task.setStatus(TaskStatus.IN_PROGRESS);
-				task.awake();
-			} else {
-				// 完成
-				TaskCondition condition = new TaskCondition()
-						.setActionSet(Set.of(TaskAction.BLEND))
-						.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-				Task task = this.taskQueueHelper.findRunningTask(condition)
-						.max(Comparator.comparing(Task::getProgress))
-						.orElse(null);
-				if (task == null) {
-					return;
-				}
-				task.setProperty(Constants.TASK_PROPERTY_FINAL_PROMPT, parseData.getPrompt());
-				finishTask(task, message);
-				task.awake();
-			}
-		} else if (MessageType.UPDATE == messageType) {
-			// 进度
-			TaskCondition condition = new TaskCondition()
-					.setProgressMessageId(message.getId())
-					.setActionSet(Set.of(TaskAction.BLEND))
-					.setStatusSet(Set.of(TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition).findFirst().orElse(null);
-			if (task == null) {
-				return;
-			}
-			task.setProperty(Constants.TASK_PROPERTY_PROGRESS_MESSAGE_ID, message.getId());
 			task.setProgress(parseData.getStatus());
 			task.setImageUrl(getImageUrl(message));
 			task.awake();

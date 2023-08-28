@@ -9,11 +9,9 @@ import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.UVContentParseData;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -93,35 +91,6 @@ public class VariationMessageHandler extends MessageHandler {
 			task.setStatus(TaskStatus.IN_PROGRESS);
 			task.setProgress(parseData.getStatus());
 			task.setImageUrl(getImageUrl(message));
-			task.awake();
-		}
-	}
-
-	/**
-	 * bot-wss模式，取不到执行进度; todo: 同个任务不同变换对应不上.
-	 *
-	 * @param messageType messageType
-	 * @param message     message
-	 */
-	@Override
-	public void handle(MessageType messageType, Message message) {
-		String content = message.getContentRaw();
-		if (MessageType.CREATE.equals(messageType)) {
-			UVContentParseData parseData = parse(content);
-			if (parseData == null) {
-				return;
-			}
-			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(parseData.getPrompt())
-					.setActionSet(Set.of(TaskAction.VARIATION))
-					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
-					.min(Comparator.comparing(Task::getSubmitTime))
-					.orElse(null);
-			if (task == null) {
-				return;
-			}
-			finishTask(task, message);
 			task.awake();
 		}
 	}

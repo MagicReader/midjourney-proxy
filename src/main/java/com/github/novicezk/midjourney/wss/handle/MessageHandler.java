@@ -20,8 +20,6 @@ public abstract class MessageHandler {
 
 	public abstract void handle(MessageType messageType, DataObject message);
 
-	public abstract void handle(MessageType messageType, Message message);
-
 	protected String getMessageContent(DataObject message) {
 		return message.hasKey("content") ? message.getString("content") : "";
 	}

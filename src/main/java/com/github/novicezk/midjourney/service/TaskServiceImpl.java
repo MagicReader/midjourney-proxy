@@ -1,7 +1,13 @@
 package com.github.novicezk.midjourney.service;
 
+import cn.hutool.core.util.IdUtil;
+import com.github.novicezk.midjourney.Constants;
+import com.github.novicezk.midjourney.ProxyProperties;
 import com.github.novicezk.midjourney.ReturnCode;
+import com.github.novicezk.midjourney.dto.BaseSubmitDTO;
+import com.github.novicezk.midjourney.dto.InfoSubmitDTO;
 import com.github.novicezk.midjourney.enums.BlendDimensions;
+import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.result.Message;
 import com.github.novicezk.midjourney.result.SubmitResultVO;
 import com.github.novicezk.midjourney.support.Task;
@@ -10,6 +16,8 @@ import com.github.novicezk.midjourney.util.MimeTypeUtils;
 import eu.maxschuster.dataurl.DataUrl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,10 +28,46 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
-
+    private final LoadBalancerService loadBalancerService;
     private final TaskStoreService taskStoreService;
     private final Map<String, DiscordService> discordServiceMap;
     private final TaskQueueHelper taskQueueHelper;
+
+    @Override
+    public Task newTask(BaseSubmitDTO base) {
+        return newTask(base,null);
+    }
+
+    @Override
+    public Task newTask(BaseSubmitDTO base,String associationKey) {
+        Task task = new Task();
+        task.setId(IdUtil.getSnowflakeNextIdStr());
+        task.setSubmitTime(System.currentTimeMillis());
+        task.setState(base.getState());
+        String notifyHook = base.getNotifyHook();
+        task.setProperty(Constants.TASK_PROPERTY_NOTIFY_HOOK, notifyHook);
+        task.setAssociationKey(StringUtils.isNotBlank(associationKey) ? associationKey : loadBalancerService.getLoadBalancerKey());
+        ProxyProperties.DiscordConfig.DiscordAccountConfig discordAccountConfig = loadBalancerService.getDiscordAccountConfigByKey(task.getAssociationKey());
+        task.setGuildId(discordAccountConfig.getGuildId());
+        task.setChannelId(discordAccountConfig.getChannelId());
+        return task;
+    }
+
+    @Override
+    public List<SubmitResultVO> submitInfo(InfoSubmitDTO infoSubmitDTO) {
+        List<SubmitResultVO> submitResultVOList = new ArrayList<>(discordServiceMap.size());
+        discordServiceMap.forEach((associationKey, discordService)->{
+            Task task = newTask(infoSubmitDTO, associationKey);
+            task.setAction(TaskAction.INFO);
+            String prompt = "/info --guildId ${guildId} --channelId ${channelId}"
+                    .replace("${guildId}",task.getGuildId())
+                    .replace("${channelId}",task.getChannelId());
+            task.setPrompt(prompt);
+            SubmitResultVO submitResultVO = this.taskQueueHelper.submitTask(task, () -> discordService.info());
+            submitResultVOList.add(submitResultVO);
+        });
+        return submitResultVOList;
+    }
 
     @Override
     public SubmitResultVO submitImagine(Task task, DataUrl dataUrl) {

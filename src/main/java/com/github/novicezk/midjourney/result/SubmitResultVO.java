@@ -20,6 +20,12 @@ public class SubmitResultVO {
 	@ApiModelProperty(value = "任务ID", example = "1320098173412546")
 	private String result;
 
+	@ApiModelProperty("服务器id")
+	private String guildId;
+
+	@ApiModelProperty("频道id")
+	private String channelId;
+
 	@ApiModelProperty(value = "扩展字段")
 	private Map<String, Object> properties = new HashMap<>();
 

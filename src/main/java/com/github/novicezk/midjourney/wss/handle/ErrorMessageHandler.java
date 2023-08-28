@@ -6,7 +6,6 @@ import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataArray;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.springframework.stereotype.Component;
@@ -79,11 +78,6 @@ public class ErrorMessageHandler extends MessageHandler {
 		}
 		targetTask.fail(reason);
 		targetTask.awake();
-	}
-
-	@Override
-	public void handle(MessageType messageType, Message message) {
-		// bot-wss 获取不到错误
 	}
 
 }

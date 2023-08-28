@@ -8,7 +8,6 @@ import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.UVContentParseData;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.springframework.stereotype.Component;
 
@@ -84,46 +83,6 @@ public class UpscaleMessageHandler extends MessageHandler {
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
 			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
 			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt, end2.getPrompt()))
-					.min(Comparator.comparing(Task::getSubmitTime))
-					.orElse(null);
-			if (task == null) {
-				return;
-			}
-			finishTask(task, message);
-			task.awake();
-		}
-	}
-
-	@Override
-	public void handle(MessageType messageType, Message message) {
-		if (MessageType.CREATE != messageType) {
-			return;
-		}
-		String content = message.getContentRaw();
-		UVContentParseData parseData = parseEnd(content);
-		if (parseData != null) {
-			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(parseData.getPrompt())
-					.setActionSet(Set.of(TaskAction.UPSCALE))
-					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
-					.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "U" + parseData.getIndex()))
-					.min(Comparator.comparing(Task::getSubmitTime))
-					.orElse(null);
-			if (task == null) {
-				return;
-			}
-			finishTask(task, message);
-			task.awake();
-			return;
-		}
-		UVContentParseData end2 = parseEnd2(content);
-		if (end2 != null) {
-			TaskCondition condition = new TaskCondition()
-					.setFinalPromptEn(end2.getPrompt())
-					.setActionSet(Set.of(TaskAction.UPSCALE))
-					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(condition)
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
 			if (task == null) {

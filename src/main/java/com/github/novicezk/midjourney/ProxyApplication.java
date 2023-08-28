@@ -5,13 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import spring.config.BeanConfig;
-import spring.config.BotWebSocketStarterConfig;
 import spring.config.UserWebSocketStarterConfig;
 import spring.config.WebMvcConfig;
 
 @EnableScheduling
 @SpringBootApplication
-@Import({BeanConfig.class, WebMvcConfig.class, UserWebSocketStarterConfig.class, BotWebSocketStarterConfig.class})
+@Import({BeanConfig.class, WebMvcConfig.class, UserWebSocketStarterConfig.class})
 public class ProxyApplication {
 
     public static void main(String[] args) {

@@ -1,5 +1,7 @@
 package com.github.novicezk.midjourney.service;
 
+import com.github.novicezk.midjourney.ProxyProperties;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -29,8 +31,13 @@ public interface LoadBalancerService {
 
     /**
      * 获取轮询的key
-     *
      * @return String
      */
     String getLoadBalancerKey();
+
+    /**
+     * 根据key获取配置
+     * @return String
+     */
+    ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key);
 }

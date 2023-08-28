@@ -25,7 +25,9 @@ public enum TaskAction {
 	/**
 	 * 多图混合.
 	 */
-	BLEND
-
-
+	BLEND,
+	/**
+	 * 查询账号info.
+	 */
+	INFO,
 }

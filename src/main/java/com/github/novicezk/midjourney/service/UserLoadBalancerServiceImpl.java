@@ -4,6 +4,10 @@ import com.github.novicezk.midjourney.ProxyProperties;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author NpcZZZZZZ
@@ -14,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserLoadBalancerServiceImpl implements LoadBalancerService {
     private final ProxyProperties properties;
+    private Map<String, ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigMap;
 
     @Override
     public String getLoadBalancerKey() {
@@ -22,5 +27,27 @@ public class UserLoadBalancerServiceImpl implements LoadBalancerService {
         int i = getAndIncrement() % size;
         ProxyProperties.DiscordConfig.DiscordAccountConfig discordAccountConfig = discordAccountConfigList.get(i);
         return discordAccountConfig.getGuildId() + ":" + discordAccountConfig.getChannelId();
+    }
+
+    /**
+     * 根据key获取配置
+     * @param key
+     * @return DiscordAccountConfig
+     */
+    @Override
+    public ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key) {
+        if(Objects.isNull(discordAccountConfigMap)){
+            this.initDiscordAccountConfigMap();
+        }
+        return discordAccountConfigMap.get(key);
+    }
+
+    /**
+     * 获取所有key
+     * @return String
+     */
+    private synchronized void initDiscordAccountConfigMap() {
+        List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList();
+        discordAccountConfigMap = discordAccountConfigList.stream().collect(Collectors.toMap(x -> x.getGuildId() + ":" + x.getChannelId(), Function.identity()));
     }
 }

@@ -27,6 +27,7 @@ public class TaskCondition implements Predicate<Task> {
 	private String relatedTaskId;
 	private String messageId;
 	private String progressMessageId;
+	private String channelId;
 
 	@Override
 	public boolean test(Task task) {
@@ -62,6 +63,9 @@ public class TaskCondition implements Predicate<Task> {
 			return false;
 		}
 		if (CharSequenceUtil.isNotBlank(this.progressMessageId) && !this.progressMessageId.equals(task.getProperty(Constants.TASK_PROPERTY_PROGRESS_MESSAGE_ID))) {
+			return false;
+		}
+		if (CharSequenceUtil.isNotBlank(this.channelId) && !this.channelId.equals(task.getChannelId())) {
 			return false;
 		}
 		return true;

@@ -48,6 +48,12 @@ public class Task implements Serializable {
     @ApiModelProperty("关联key, 绘图变化时需对应初始任务的账号")
     private String associationKey;
 
+    @ApiModelProperty("服务器id")
+    private String guildId;
+
+    @ApiModelProperty("频道id")
+    private String channelId;
+
     // 任务扩展属性，仅支持基本类型
     private Map<String, Object> properties;
 

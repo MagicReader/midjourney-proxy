@@ -1,6 +1,7 @@
 package com.github.novicezk.midjourney.wss.user;
 
 
+import com.alibaba.fastjson2.JSON;
 import com.github.novicezk.midjourney.enums.MessageType;
 import com.github.novicezk.midjourney.wss.handle.MessageHandler;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.utils.data.DataObject;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor

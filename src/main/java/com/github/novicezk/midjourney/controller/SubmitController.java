@@ -1,29 +1,23 @@
 package com.github.novicezk.midjourney.controller;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.IdUtil;
 import com.github.novicezk.midjourney.Constants;
-import com.github.novicezk.midjourney.ProxyProperties;
 import com.github.novicezk.midjourney.ReturnCode;
-import com.github.novicezk.midjourney.dto.BaseSubmitDTO;
+import com.github.novicezk.midjourney.dto.InfoSubmitDTO;
 import com.github.novicezk.midjourney.dto.SubmitBlendDTO;
 import com.github.novicezk.midjourney.dto.SubmitChangeDTO;
 import com.github.novicezk.midjourney.dto.SubmitDescribeDTO;
 import com.github.novicezk.midjourney.dto.SubmitImagineDTO;
-import com.github.novicezk.midjourney.dto.SubmitSimpleChangeDTO;
 import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.enums.TaskStatus;
 import com.github.novicezk.midjourney.result.SubmitResultVO;
-import com.github.novicezk.midjourney.service.LoadBalancerService;
 import com.github.novicezk.midjourney.service.TaskService;
 import com.github.novicezk.midjourney.service.TaskStoreService;
 import com.github.novicezk.midjourney.service.TranslateService;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.BannedPromptUtils;
-import com.github.novicezk.midjourney.util.ConvertUtils;
 import com.github.novicezk.midjourney.util.MimeTypeUtils;
-import com.github.novicezk.midjourney.util.TaskChangeParams;
 import eu.maxschuster.dataurl.DataUrl;
 import eu.maxschuster.dataurl.DataUrlSerializer;
 import eu.maxschuster.dataurl.IDataUrlSerializer;
@@ -47,9 +41,13 @@ import java.util.Set;
 public class SubmitController {
     private final TranslateService translateService;
     private final TaskStoreService taskStoreService;
-    private final ProxyProperties properties;
     private final TaskService taskService;
-    private final LoadBalancerService loadBalancerService;
+
+    @ApiOperation(value = "提交Info任务")
+    @PostMapping("/info")
+    public List<SubmitResultVO> info(@RequestBody InfoSubmitDTO infoSubmitDTO) {
+        return this.taskService.submitInfo(infoSubmitDTO);
+    }
 
     @ApiOperation(value = "提交Imagine任务")
     @PostMapping("/imagine")
@@ -59,9 +57,8 @@ public class SubmitController {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "prompt不能为空");
         }
         prompt = prompt.trim();
-        Task task = newTask(imagineDTO);
+        Task task = this.taskService.newTask(imagineDTO);
         task.setAction(TaskAction.IMAGINE);
-        task.setAssociationKey(loadBalancerService.getLoadBalancerKey());
         task.setPrompt(prompt);
         String promptEn;
         int paramStart = prompt.indexOf(" --");
@@ -88,22 +85,6 @@ public class SubmitController {
         task.setPromptEn(promptEn);
         task.setDescription("/imagine " + prompt);
         return this.taskService.submitImagine(task, dataUrl);
-    }
-
-    @ApiOperation(value = "绘图变化-simple")
-    @PostMapping("/simple-change")
-    public SubmitResultVO simpleChange(@RequestBody SubmitSimpleChangeDTO simpleChangeDTO) {
-        TaskChangeParams changeParams = ConvertUtils.convertChangeParams(simpleChangeDTO.getContent());
-        if (changeParams == null) {
-            return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "content参数错误");
-        }
-        SubmitChangeDTO changeDTO = new SubmitChangeDTO();
-        changeDTO.setAction(changeParams.getAction());
-        changeDTO.setTaskId(changeParams.getId());
-        changeDTO.setIndex(changeParams.getIndex());
-        changeDTO.setState(simpleChangeDTO.getState());
-        changeDTO.setNotifyHook(simpleChangeDTO.getNotifyHook());
-        return change(changeDTO);
     }
 
     @ApiOperation(value = "绘图变化")
@@ -138,9 +119,8 @@ public class SubmitController {
         if (!Set.of(TaskAction.IMAGINE, TaskAction.VARIATION, TaskAction.BLEND).contains(targetTask.getAction())) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "关联任务不允许执行变化");
         }
-        Task task = newTask(changeDTO);
+        Task task = this.taskService.newTask(changeDTO, targetTask.getAssociationKey());
         task.setAction(changeDTO.getAction());
-        task.setAssociationKey(targetTask.getAssociationKey());
         task.setPrompt(targetTask.getPrompt());
         task.setPromptEn(targetTask.getPromptEn());
         task.setProperty(Constants.TASK_PROPERTY_FINAL_PROMPT, targetTask.getProperty(Constants.TASK_PROPERTY_FINAL_PROMPT));
@@ -170,9 +150,8 @@ public class SubmitController {
         } catch (MalformedURLException e) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "base64格式错误");
         }
-        Task task = newTask(describeDTO);
+        Task task = this.taskService.newTask(describeDTO);
         task.setAction(TaskAction.DESCRIBE);
-        task.setAssociationKey(loadBalancerService.getLoadBalancerKey());
         String taskFileName = task.getId() + "." + MimeTypeUtils.guessFileSuffix(dataUrl.getMimeType());
         task.setDescription("/describe " + taskFileName);
         return this.taskService.submitDescribe(task, dataUrl);
@@ -198,20 +177,11 @@ public class SubmitController {
         } catch (MalformedURLException e) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "base64格式错误");
         }
-        Task task = newTask(blendDTO);
+        Task task = this.taskService.newTask(blendDTO);
         task.setAction(TaskAction.BLEND);
-        task.setAssociationKey(loadBalancerService.getLoadBalancerKey());
         task.setDescription("/blend " + task.getId() + " " + dataUrlList.size());
         return this.taskService.submitBlend(task, dataUrlList, blendDTO.getDimensions());
     }
 
-    private Task newTask(BaseSubmitDTO base) {
-        Task task = new Task();
-        task.setId(IdUtil.getSnowflakeNextIdStr());
-        task.setSubmitTime(System.currentTimeMillis());
-        task.setState(base.getState());
-        String notifyHook = CharSequenceUtil.isBlank(base.getNotifyHook()) ? this.properties.getNotifyHook() : base.getNotifyHook();
-        task.setProperty(Constants.TASK_PROPERTY_NOTIFY_HOOK, notifyHook);
-        return task;
-    }
+
 }
