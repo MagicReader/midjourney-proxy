@@ -42,6 +42,7 @@ public class InfoMessageHandler extends MessageHandler{
         String channelId = message.getString("channel_id");
         log.info("[/info] channel_id->{},description->{}",channelId,description);
         if(StringUtils.isAnyBlank(channelId, description)){
+            log.error("[处理info信息-失败]channelId或description为空，channel_id->{},description->{}",channelId,description);
             return;
         }
         TaskCondition condition = new TaskCondition()
@@ -52,8 +53,10 @@ public class InfoMessageHandler extends MessageHandler{
                 .min(Comparator.comparing(Task::getSubmitTime))
                 .orElse(null);
         if (task == null) {
+            log.error("[处理info信息-失败]task查询为空，condition->{}",condition);
             return;
         }
+        log.info("[处理info信息-成功]task.awake()，task->{}",task);
         task.setDescription(description);
         task.setProperty(Constants.TASK_PROPERTY_MESSAGE_ID, message.getString("id"));
         task.setProperty(Constants.TASK_PROPERTY_SUBMIT_INFO_DESCRIPTION, parseDescription(description));
