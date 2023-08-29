@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @ConfigurationProperties(prefix = "mj")
 public class ProxyProperties {
-  
+
 	/**
 	 * task存储配置.
 	 */
@@ -96,6 +96,10 @@ public class ProxyProperties {
              * 你的登录token.
              */
             private String userToken;
+			/**
+			 * 是否允许账号出图.
+			 */
+			private boolean openFlag;
             /**
              * 你的会话id.
              */
@@ -222,7 +226,7 @@ public class ProxyProperties {
          * 任务超时时间(分钟).
          */
         private int timeoutMinutes = 5;
-      
+
       	/**
 		     * 线程池CorePoolSize.
 		     */

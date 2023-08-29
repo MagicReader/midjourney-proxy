@@ -22,7 +22,10 @@ public class UserLoadBalancerServiceImpl implements LoadBalancerService {
 
     @Override
     public String getLoadBalancerKey() {
-        List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList();
+        List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList()
+                .stream()
+                .filter(ProxyProperties.DiscordConfig.DiscordAccountConfig::isOpenFlag)
+                .collect(Collectors.toList());
         int size = discordAccountConfigList.size();
         int i = getAndIncrement() % size;
         ProxyProperties.DiscordConfig.DiscordAccountConfig discordAccountConfig = discordAccountConfigList.get(i);
