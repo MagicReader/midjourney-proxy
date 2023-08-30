@@ -47,7 +47,7 @@ public class InfoMessageHandler extends MessageHandler{
         }
         TaskCondition condition = new TaskCondition()
                 .setActionSet(Set.of(TaskAction.INFO))
-                .setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS))
+                .setStatusSet(Set.of(TaskStatus.NOT_START,TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS))
                 .setChannelId(channelId);
         Task task = this.taskQueueHelper.findRunningTask(condition)
                 .min(Comparator.comparing(Task::getSubmitTime))
