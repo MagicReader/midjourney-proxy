@@ -7,3 +7,6 @@ spring:
     host: 10.1.9.77
     port: 6379
     database: 9
+art-center-api:
+  host: http://10.12.28.166:9520/art-center-api
+  pull-request: /mj-account/pull/request

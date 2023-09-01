@@ -10,6 +10,7 @@ import com.github.novicezk.midjourney.service.store.InMemoryTaskStoreServiceImpl
 import com.github.novicezk.midjourney.service.store.RedisTaskStoreServiceImpl;
 import com.github.novicezk.midjourney.service.translate.BaiduTranslateServiceImpl;
 import com.github.novicezk.midjourney.service.translate.GPTTranslateServiceImpl;
+import com.github.novicezk.midjourney.support.DiscordAccountConfigPool;
 import com.github.novicezk.midjourney.support.DiscordHelper;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskMixin;
@@ -40,10 +41,10 @@ public class BeanConfig {
 
 
     @Bean
-    public Map<String, DiscordService> discordService(ProxyProperties properties, DiscordHelper discordHelper, RestTemplate restTemplate) {
+    public Map<String, DiscordService> discordService(DiscordAccountConfigPool discordAccountConfigPool, ProxyProperties properties, DiscordHelper discordHelper, RestTemplate restTemplate) {
         ProxyProperties.DiscordConfig discord = properties.getDiscord();
         String serverUrl = discordHelper.getServer();
-        return discord.getDiscordAccountConfigList().stream().map(x -> new DiscordServiceImpl(x.getGuildId(), x.getChannelId(), x.getUserToken(),
+        return discordAccountConfigPool.getDiscordAccountConfigList().stream().map(x -> new DiscordServiceImpl(x.getGuildId(), x.getChannelId(), x.getUserToken(),
                 x.getSessionId(), discord.getUserAgent(), serverUrl + "/api/v9/interactions",
                 serverUrl + "/api/v9/channels/" + x.getChannelId() + "/attachments",
                 serverUrl + "/api/v9/channels/" + x.getChannelId() + "/messages",

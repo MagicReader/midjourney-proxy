@@ -1,12 +1,12 @@
 package com.github.novicezk.midjourney.service;
 
-import com.github.novicezk.midjourney.ProxyProperties;
+import com.github.novicezk.midjourney.support.DiscordAccountConfig;
+import com.github.novicezk.midjourney.support.DiscordAccountConfigPool;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -17,18 +17,21 @@ import java.util.stream.Collectors;
  **/
 @RequiredArgsConstructor
 public class UserLoadBalancerServiceImpl implements LoadBalancerService {
-    private final ProxyProperties properties;
-    private volatile Map<String, ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigMap;
+    private final DiscordAccountConfigPool discordAccountConfigPool;
 
+    /**
+     * 获取轮询的key
+     * @return String
+     */
     @Override
     public String getLoadBalancerKey() {
-        List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList()
+        List<DiscordAccountConfig> discordAccountOpenList = discordAccountConfigPool.getDiscordAccountConfigList()
                 .stream()
-                .filter(ProxyProperties.DiscordConfig.DiscordAccountConfig::isOpenFlag)
+                .filter(item->BooleanUtils.isTrue(item.getOpenFlag()))
                 .collect(Collectors.toList());
-        int size = discordAccountConfigList.size();
+        int size = discordAccountOpenList.size();
         int i = getAndIncrement() % size;
-        ProxyProperties.DiscordConfig.DiscordAccountConfig discordAccountConfig = discordAccountConfigList.get(i);
+        DiscordAccountConfig discordAccountConfig = discordAccountOpenList.get(i);
         return discordAccountConfig.getGuildId() + ":" + discordAccountConfig.getChannelId();
     }
 
@@ -38,22 +41,10 @@ public class UserLoadBalancerServiceImpl implements LoadBalancerService {
      * @return DiscordAccountConfig
      */
     @Override
-    public ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key) {
-        if(Objects.isNull(discordAccountConfigMap)){
-            this.initDiscordAccountConfigMap();
-        }
-        return discordAccountConfigMap.get(key);
-    }
-
-    /**
-     * 初始化map：key->config
-     * @return String
-     */
-    private synchronized void initDiscordAccountConfigMap() {
-        if(Objects.nonNull(discordAccountConfigMap)){
-            return;
-        }
-        List<ProxyProperties.DiscordConfig.DiscordAccountConfig> discordAccountConfigList = properties.getDiscord().getDiscordAccountConfigList();
-        discordAccountConfigMap = discordAccountConfigList.stream().collect(Collectors.toMap(x -> x.getGuildId() + ":" + x.getChannelId(), Function.identity()));
+    public DiscordAccountConfig getDiscordAccountConfigByKey(String key) {
+        return discordAccountConfigPool.getDiscordAccountConfigList()
+                .stream()
+                .filter(x-> StringUtils.equals(key,x.getGuildId() + ":" + x.getChannelId()))
+                .findFirst().orElse(null);
     }
 }

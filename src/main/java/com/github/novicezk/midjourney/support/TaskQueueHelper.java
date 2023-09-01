@@ -9,6 +9,7 @@ import com.github.novicezk.midjourney.result.SubmitResultVO;
 import com.github.novicezk.midjourney.service.NotifyService;
 import com.github.novicezk.midjourney.service.TaskStoreService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -32,23 +34,35 @@ public class TaskQueueHelper {
     @Resource
     private NotifyService notifyService;
 
+    private final ProxyProperties properties;
+    private final DiscordAccountConfigPool discordAccountConfigPool;
     private final ThreadPoolTaskExecutor taskExecutor;
     private final List<Task> runningTasks;
     private final Map<String, Future<?>> taskFutureMap;
 
-    public TaskQueueHelper(ProxyProperties properties) {
-        ProxyProperties.TaskQueueConfig queueConfig = properties.getQueue();
-        ProxyProperties.DiscordConfig discord = properties.getDiscord();
-        int size = discord.isUserWss() ? discord.getDiscordAccountConfigList().size() : discord.getBotTokenConfigList().size();
-        int coreSize = queueConfig.getCoreSize() * size;
+    public TaskQueueHelper(ProxyProperties properties,DiscordAccountConfigPool discordAccountConfigPool) {
+        this.properties = properties;
+        this.discordAccountConfigPool = discordAccountConfigPool;
         this.runningTasks = new CopyOnWriteArrayList<>();
         this.taskFutureMap = new ConcurrentHashMap<>();
         this.taskExecutor = new ThreadPoolTaskExecutor();
-        this.taskExecutor.setCorePoolSize(coreSize);
-        this.taskExecutor.setMaxPoolSize(coreSize);
-        this.taskExecutor.setQueueCapacity(queueConfig.getQueueSize() * size);
+        this.updateThreadPoolTaskExecutorConfig();
         this.taskExecutor.setThreadNamePrefix("TaskQueue-");
         this.taskExecutor.initialize();
+    }
+
+    public void updateThreadPoolTaskExecutorConfig(){
+        List<DiscordAccountConfig> discordAccountOpenList = discordAccountConfigPool.getDiscordAccountConfigList()
+                .stream()
+                .filter(item-> BooleanUtils.isTrue(item.getOpenFlag()))
+                .collect(Collectors.toList());
+        int accountPoolSize = discordAccountOpenList.size()>0 ? discordAccountOpenList.size() : 1;
+        ProxyProperties.TaskQueueConfig queueConfig = properties.getQueue();
+        int corePoolSize = queueConfig.getCoreSize() * accountPoolSize;
+        int queueCapacity = queueConfig.getQueueSize() * accountPoolSize;
+        this.taskExecutor.setMaxPoolSize(corePoolSize);
+        this.taskExecutor.setCorePoolSize(corePoolSize);
+        this.taskExecutor.setQueueCapacity(queueCapacity);
     }
 
     public Set<String> getQueueTaskIds() {

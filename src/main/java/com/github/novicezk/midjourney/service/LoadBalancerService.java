@@ -1,6 +1,7 @@
 package com.github.novicezk.midjourney.service;
 
 import com.github.novicezk.midjourney.ProxyProperties;
+import com.github.novicezk.midjourney.support.DiscordAccountConfig;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,7 +38,8 @@ public interface LoadBalancerService {
 
     /**
      * 根据key获取配置
-     * @return String
+     * @param key
+     * @return DiscordAccountConfig
      */
-    ProxyProperties.DiscordConfig.DiscordAccountConfig getDiscordAccountConfigByKey(String key);
+    DiscordAccountConfig getDiscordAccountConfigByKey(String key);
 }

@@ -5,7 +5,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
-import java.util.List;
 
 @Data
 @ConfigurationProperties(prefix = "mj")
@@ -63,11 +62,6 @@ public class ProxyProperties {
     @Data
     public static class DiscordConfig {
         /**
-         * 多账号配置
-         */
-        private List<DiscordAccountConfig> discordAccountConfigList;
-
-        /**
          * 调用discord接口、连接wss时的user-agent.
          */
         private String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
@@ -76,47 +70,6 @@ public class ProxyProperties {
          */
         private boolean userWss = true;
 
-        /**
-         * 你的机器人token.
-         */
-        private List<BotTokenConfig> botTokenConfigList;
-
-
-        @Data
-        public static class DiscordAccountConfig {
-            /**
-             * 你的服务器id.
-             */
-            private String guildId;
-            /**
-             * 你的频道id.
-             */
-            private String channelId;
-            /**
-             * 你的登录token.
-             */
-            private String userToken;
-			/**
-			 * 是否允许账号出图.
-			 */
-			private boolean openFlag;
-            /**
-             * 你的会话id.
-             */
-            private String sessionId = "9c4055428e13bcbf2248a6b36084c5f3";
-        }
-
-        @Data
-        public static class BotTokenConfig {
-            /**
-             * 你的机器人token.
-             */
-            private String botToken;
-            /**
-             * 你的频道id.
-             */
-            private String channelId;
-        }
     }
 
     @Data
@@ -228,8 +181,8 @@ public class ProxyProperties {
         private int timeoutMinutes = 5;
 
       	/**
-		     * 线程池CorePoolSize.
-		     */
-		    private int notifyPoolSize = 10;
+		 * 线程池CorePoolSize.
+		 */
+		private int notifyPoolSize = 10;
     }
 }

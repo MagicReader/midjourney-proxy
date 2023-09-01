@@ -4,13 +4,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import spring.config.ArtAiCenterApiProperties;
 import spring.config.BeanConfig;
 import spring.config.UserWebSocketStarterConfig;
 import spring.config.WebMvcConfig;
 
 @EnableScheduling
 @SpringBootApplication
-@Import({BeanConfig.class, WebMvcConfig.class, UserWebSocketStarterConfig.class})
+@Import({BeanConfig.class, WebMvcConfig.class, UserWebSocketStarterConfig.class, ArtAiCenterApiProperties.class})
 public class ProxyApplication {
 
     public static void main(String[] args) {

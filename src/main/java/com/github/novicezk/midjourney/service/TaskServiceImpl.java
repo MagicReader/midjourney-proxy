@@ -2,7 +2,6 @@ package com.github.novicezk.midjourney.service;
 
 import cn.hutool.core.util.IdUtil;
 import com.github.novicezk.midjourney.Constants;
-import com.github.novicezk.midjourney.ProxyProperties;
 import com.github.novicezk.midjourney.ReturnCode;
 import com.github.novicezk.midjourney.dto.BaseSubmitDTO;
 import com.github.novicezk.midjourney.dto.InfoSubmitDTO;
@@ -10,13 +9,13 @@ import com.github.novicezk.midjourney.enums.BlendDimensions;
 import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.result.Message;
 import com.github.novicezk.midjourney.result.SubmitResultVO;
+import com.github.novicezk.midjourney.support.DiscordAccountConfig;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskQueueHelper;
 import com.github.novicezk.midjourney.util.MimeTypeUtils;
 import eu.maxschuster.dataurl.DataUrl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +46,7 @@ public class TaskServiceImpl implements TaskService {
         String notifyHook = base.getNotifyHook();
         task.setProperty(Constants.TASK_PROPERTY_NOTIFY_HOOK, notifyHook);
         task.setAssociationKey(StringUtils.isNotBlank(associationKey) ? associationKey : loadBalancerService.getLoadBalancerKey());
-        ProxyProperties.DiscordConfig.DiscordAccountConfig discordAccountConfig = loadBalancerService.getDiscordAccountConfigByKey(task.getAssociationKey());
+        DiscordAccountConfig discordAccountConfig = loadBalancerService.getDiscordAccountConfigByKey(task.getAssociationKey());
         task.setGuildId(discordAccountConfig.getGuildId());
         task.setChannelId(discordAccountConfig.getChannelId());
         return task;

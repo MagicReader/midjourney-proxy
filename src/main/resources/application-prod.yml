@@ -1,9 +1,8 @@
-mj:
-  proxy:
-    host: 127.0.0.1
-    port: 7890
 spring:
   redis:
     host: task2.cyou-inc.com
     port: 6379
     database: 9
+art-center-api:
+  host: http://drawing.cyou-inc.com/art-center-api
+  pull-request: /mj-account/pull/request
