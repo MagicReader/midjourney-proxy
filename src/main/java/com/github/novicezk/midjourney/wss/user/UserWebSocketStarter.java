@@ -79,6 +79,12 @@ public class UserWebSocketStarter extends WebSocketAdapter implements WebSocketS
     }
 
     @Override
+    public synchronized void close(String reason) {
+        this.connected = false;
+        this.socket.disconnect(1000, reason);
+    }
+
+    @Override
     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
         log.debug("[gateway] Connected to websocket.");
         this.connected = true;
@@ -180,11 +186,6 @@ public class UserWebSocketStarter extends WebSocketAdapter implements WebSocketS
             log.trace("[gateway] Say hello: resume");
         }
         send(data);
-    }
-
-    private void close(String reason) {
-        this.connected = false;
-        this.socket.disconnect(1000, reason);
     }
 
     private void reset() {

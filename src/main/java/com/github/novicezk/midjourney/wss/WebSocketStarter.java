@@ -10,6 +10,8 @@ public interface WebSocketStarter {
 
     void start() throws Exception;
 
+    void close(String reason);
+
     default void initProxy(String host, Integer port) {
         if (Strings.isNotBlank(host) && Objects.nonNull(port)) {
             System.setProperty("http.proxyHost", host);

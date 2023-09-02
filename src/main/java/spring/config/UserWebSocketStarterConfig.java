@@ -29,18 +29,11 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties(ProxyProperties.class)
 @ConditionalOnProperty(prefix = "mj.discord", name = "user-wss", havingValue = "true")
 public class UserWebSocketStarterConfig {
-    @Bean
-    public Map<String, UserMessageListener> userMessageListener(DiscordAccountConfigPool discordAccountConfigPool,
-                                                                List<MessageHandler> messageHandlerList) {
-        return discordAccountConfigPool.getDiscordAccountConfigList().stream()
-                .map(x -> new UserMessageListener(x.getChannelId(), messageHandlerList))
-                .collect(Collectors.toMap(UserMessageListener::getChannelId, Function.identity()));
-    }
 
     @Bean
     public Map<String, WebSocketStarter> userWebSocketStarter(DiscordAccountConfigPool discordAccountConfigPool,
+                                                              List<MessageHandler> messageHandlerList,
                                                               ProxyProperties properties,
-                                                              Map<String, UserMessageListener> userMessageListenerMap,
                                                               DiscordHelper discordHelper) {
         ProxyProperties.DiscordConfig discord = properties.getDiscord();
         ProxyProperties.ProxyConfig proxy = properties.getProxy();
@@ -51,7 +44,7 @@ public class UserWebSocketStarterConfig {
                         proxy.getPort(),
                         x.getUserToken(),
                         discord.getUserAgent(),
-                        userMessageListenerMap.get(x.getChannelId()), discordHelper))
+                        new UserMessageListener(x.getChannelId(), messageHandlerList), discordHelper))
                 .collect(Collectors.toMap(UserWebSocketStarter::getUserToken, Function.identity()));
     }
 

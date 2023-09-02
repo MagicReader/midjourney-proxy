@@ -30,7 +30,6 @@ public class AccountServiceImpl implements AccountService{
     private final DiscordHelper discordHelper;
     private final TaskQueueHelper taskQueueHelper;
     private final Map<String, DiscordService> discordServiceMap;
-    private final Map<String, UserMessageListener> userMessageListenerMap;
     private final Map<String, WebSocketStarter> webSocketStarterMap;
     private final List<MessageHandler> messageHandlerList;
 
@@ -40,32 +39,39 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public DiscordAccountConfig updateAccountConfig(DiscordAccountConfig discordAccountConfig) throws Exception {
-        DiscordAccountConfig config = discordAccountConfigPool.getDiscordAccountConfigList()
+    public DiscordAccountConfig updateAccountConfig(DiscordAccountConfig newAccountConfig) throws Exception {
+        DiscordAccountConfig oldAccountConfig = discordAccountConfigPool.getDiscordAccountConfigList()
                 .stream()
-                .filter(x-> StringUtils.equals(x.getGuildId(),discordAccountConfig.getGuildId()))
-                .filter(x-> StringUtils.equals(x.getChannelId(),discordAccountConfig.getChannelId()))
+                .filter(x-> StringUtils.equals(x.getGuildId(),newAccountConfig.getGuildId()))
+                .filter(x-> StringUtils.equals(x.getChannelId(),newAccountConfig.getChannelId()))
                 .findFirst().orElse(null);
-        // 存在->更新
-        if(Objects.nonNull(config)){
-            log.info("MJ账号配置更新->{}",discordAccountConfig);
-            if(Objects.nonNull(discordAccountConfig.getUserToken())){
-                config.setUserToken(discordAccountConfig.getUserToken());
+
+        if(Objects.nonNull(oldAccountConfig)){
+            // config存在->更新or重置
+            if(StringUtils.equals(newAccountConfig.getUserToken(), oldAccountConfig.getUserToken())){
+                log.info("MJ账号配置更新->{}",newAccountConfig);
+                oldAccountConfig = newAccountConfig;
+                return oldAccountConfig;
             }
-            if(Objects.nonNull(discordAccountConfig.getOpenFlag())){
-                config.setOpenFlag(discordAccountConfig.getOpenFlag());
-            }
-            return config;
+            log.info("MJ账号配置重置->{}",newAccountConfig);
+            discordAccountConfigPool.getDiscordAccountConfigList().remove(oldAccountConfig);
+            removeDiscordService(oldAccountConfig);
+            removeUserWebSocketStarter(oldAccountConfig);
+        }else{
+            // config不存在->新增
+            log.info("MJ账号配置新增->{}",newAccountConfig);
         }
-        // 不存在->新增
-        log.info("MJ账号配置新增->{}",discordAccountConfig);
-        addDiscordService(discordAccountConfig);
-        addUserMessageListener(discordAccountConfig);
-        addUserWebSocketStarter(discordAccountConfig);
-        discordAccountConfigPool.getDiscordAccountConfigList().add(discordAccountConfig);
+        addDiscordService(newAccountConfig);
+        addUserWebSocketStarter(newAccountConfig);
+        discordAccountConfigPool.getDiscordAccountConfigList().add(newAccountConfig);
         taskQueueHelper.updateThreadPoolTaskExecutorConfig();
 
-        return discordAccountConfig;
+        return newAccountConfig;
+    }
+
+    public DiscordService removeDiscordService(DiscordAccountConfig discordAccountConfig) {
+        String key = discordAccountConfig.getGuildId() + ":" + discordAccountConfig.getChannelId();
+        return discordServiceMap.remove(key);
     }
 
     public DiscordService addDiscordService(DiscordAccountConfig discordAccountConfig) {
@@ -93,10 +99,13 @@ public class AccountServiceImpl implements AccountService{
         return discordServiceMap.put(key,discordService);
     }
 
-    public UserMessageListener addUserMessageListener(DiscordAccountConfig discordAccountConfig) {
-        String key = discordAccountConfig.getChannelId();
-        UserMessageListener userMessageListener = new UserMessageListener(discordAccountConfig.getChannelId(), messageHandlerList);
-        return userMessageListenerMap.put(key,userMessageListener);
+    public WebSocketStarter removeUserWebSocketStarter(DiscordAccountConfig discordAccountConfig){
+        String key = discordAccountConfig.getUserToken();
+        WebSocketStarter webSocketStarter = webSocketStarterMap.remove(key);
+        if(Objects.nonNull(webSocketStarter)){
+            webSocketStarter.close("update config");
+        }
+        return webSocketStarter;
     }
 
     public WebSocketStarter addUserWebSocketStarter(DiscordAccountConfig discordAccountConfig) throws Exception {
@@ -108,7 +117,8 @@ public class AccountServiceImpl implements AccountService{
                 proxy.getPort(),
                 discordAccountConfig.getUserToken(),
                 discord.getUserAgent(),
-                userMessageListenerMap.get(discordAccountConfig.getChannelId()), discordHelper);
+                new UserMessageListener(discordAccountConfig.getChannelId(), messageHandlerList),
+                discordHelper);
         userWebSocketStarter.start();
         return webSocketStarterMap.put(key,userWebSocketStarter);
     }
