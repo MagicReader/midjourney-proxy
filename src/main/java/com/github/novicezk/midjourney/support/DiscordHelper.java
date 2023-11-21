@@ -86,7 +86,7 @@ public class DiscordHelper {
 			return url;
 		}
 		ResponseEntity<Void> res = getDisableRedirectRestTemplate().getForEntity(url, Void.class);
-		if (res.getStatusCode() == HttpStatus.FOUND) {
+		if (res.getStatusCode() == HttpStatus.PERMANENT_REDIRECT) {
 			return res.getHeaders().getFirst("Location");
 		}
 		return url;
