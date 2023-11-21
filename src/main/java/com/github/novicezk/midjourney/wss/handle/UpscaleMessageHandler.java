@@ -35,6 +35,10 @@ public class UpscaleMessageHandler extends MessageHandler {
 		return condition.and(t -> t.getPromptEn().startsWith(realPrompt) || t.getPromptEn().startsWith(prompt));
 	}
 
+	private Predicate<Task> taskPredicate2(TaskCondition condition,String realPrompt, String prompt) {
+		return condition.and(t -> t.getPromptEn().contains(realPrompt) || t.getPromptEn().startsWith(prompt));
+	}
+
 	@Override
 	public void handle(MessageType messageType, DataObject message) {
 		if (MessageType.CREATE != messageType) {
@@ -47,8 +51,8 @@ public class UpscaleMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-			realPrompt = this.discordHelper.getRealPrompt(start.getPrompt());
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt, start.getPrompt()))
+			realPrompt = this.discordHelper.getRealPromptNoUrl(start.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, start.getPrompt()))
 					.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "U" + start.getIndex()))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
@@ -64,8 +68,8 @@ public class UpscaleMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt, end.getPrompt()))
+			realPrompt = this.discordHelper.getRealPromptNoUrl(end.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, end.getPrompt()))
 					.filter(t -> CharSequenceUtil.endWith(t.getDescription(), "U" + end.getIndex()))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
@@ -81,8 +85,8 @@ public class UpscaleMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			realPrompt = this.discordHelper.getRealPrompt(end.getPrompt());
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt, end2.getPrompt()))
+			realPrompt = this.discordHelper.getRealPromptNoUrl(end.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, end2.getPrompt()))
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
 			if (task == null) {

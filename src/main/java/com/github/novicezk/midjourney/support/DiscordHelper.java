@@ -81,6 +81,17 @@ public class DiscordHelper {
 		return prompt;
 	}
 
+	public String getRealPromptNoUrl(String prompt) {
+		String regex = "<https?://\\S+>";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(prompt);
+		while (matcher.find()) {
+			String url = matcher.group();
+			prompt = prompt.replace(url, "").trim();
+		}
+		return prompt;
+	}
+
 	public String getRealUrl(String url) {
 		if (!CharSequenceUtil.startWith(url, SIMPLE_URL_PREFIX)) {
 			return url;

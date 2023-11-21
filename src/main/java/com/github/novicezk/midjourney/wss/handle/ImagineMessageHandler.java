@@ -35,14 +35,14 @@ public class ImagineMessageHandler extends MessageHandler {
 		if (parseData == null) {
 			return;
 		}
-		String realPrompt = this.discordHelper.getRealPrompt(parseData.getPrompt());
+		String realPrompt = this.discordHelper.getRealPromptNoUrl(parseData.getPrompt());
 		if (MessageType.CREATE == messageType) {
 			if ("Waiting to start".equals(parseData.getStatus())) {
 				// 开始
 				TaskCondition condition = new TaskCondition()
 						.setActionSet(Set.of(TaskAction.IMAGINE))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-				Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
+				Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt))
 						.findFirst().orElse(null);
 				if (task == null) {
 					return;
@@ -56,7 +56,7 @@ public class ImagineMessageHandler extends MessageHandler {
 				TaskCondition condition = new TaskCondition()
 						.setActionSet(Set.of(TaskAction.IMAGINE))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-				Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
+				Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt))
 						.findFirst().orElse(null);
 				if (task == null) {
 					return;
@@ -70,7 +70,7 @@ public class ImagineMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.IMAGINE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate(condition, realPrompt))
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt))
 					.findFirst().orElse(null);
 			if (task == null) {
 				return;
@@ -86,6 +86,10 @@ public class ImagineMessageHandler extends MessageHandler {
 
 	private Predicate<Task> taskPredicate(TaskCondition condition, String prompt) {
 		return condition.and(t -> prompt.startsWith(t.getPromptEn()));
+	}
+
+	private Predicate<Task> taskPredicate2(TaskCondition condition, String prompt) {
+		return condition.and(t -> t.getPromptEn().contains(prompt));
 	}
 
 	private ContentParseData parse(String content) {
