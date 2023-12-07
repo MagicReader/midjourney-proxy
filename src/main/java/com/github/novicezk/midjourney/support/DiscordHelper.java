@@ -2,15 +2,20 @@ package com.github.novicezk.midjourney.support;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.github.novicezk.midjourney.ProxyProperties;
+import com.github.novicezk.midjourney.util.Base64ImgUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +23,10 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class DiscordHelper {
 	private final ProxyProperties properties;
+
+	private final Base64ImgUtils base64ImgUtils;
+
+	private final StringRedisTemplate stringRedisTemplate;
 	/**
 	 * SIMPLE_URL_PREFIX.
 	 */
@@ -70,26 +79,48 @@ public class DiscordHelper {
 
 
 	public String getRealPrompt(String prompt) {
+		String realPrompt = prompt;
 		String regex = "<https?://\\S+>";
 		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(prompt);
+		Matcher matcher = pattern.matcher(realPrompt);
 		while (matcher.find()) {
 			String url = matcher.group();
 			String realUrl = getRealUrl(url.substring(1, url.length() - 1));
-			prompt = prompt.replace(url, realUrl);
+			realPrompt = realPrompt.replace(url, realUrl);
 		}
-		return prompt;
+		return realPrompt;
 	}
 
-	public String getRealPromptNoUrl(String prompt) {
-		String regex = "<https?://\\S+>";
+	public String getRealPromptMd5(String prompt) {
+		String realPrompt = stringRedisTemplate.opsForValue().get(prompt);
+		if(StringUtils.isNotBlank(realPrompt)){
+			return realPrompt;
+		}
+		realPrompt = getRealPrompt(prompt);
+		String regex = "http[s]?://\\S+";
 		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(prompt);
+		Matcher matcher = pattern.matcher(realPrompt);
 		while (matcher.find()) {
 			String url = matcher.group();
-			prompt = prompt.replace(url, "").trim();
+			String md5 = base64ImgUtils.generateFileUrlToMd5(url);
+			realPrompt = realPrompt.replace(url, md5).trim();
 		}
-		return prompt;
+
+		stringRedisTemplate.opsForValue().set(prompt, realPrompt);
+		stringRedisTemplate.expire(prompt, 60, TimeUnit.MINUTES);
+		return realPrompt;
+	}
+
+	public Predicate<Task> taskPredicate(TaskCondition condition, String prompt) {
+		String promptMd5 = getRealPromptMd5(prompt);
+		return condition.and(t -> {
+			if(StringUtils.isBlank(t.getPromptEn())){
+				return false;
+			}
+			String tPrompt = t.getPromptEn();
+			String tPromptMd5 = getRealPromptMd5(tPrompt);
+			return promptMd5.startsWith(tPromptMd5)  || tPromptMd5.startsWith(promptMd5) || prompt.startsWith(tPrompt) || tPrompt.startsWith(prompt);
+		});
 	}
 
 	public String getRealUrl(String url) {

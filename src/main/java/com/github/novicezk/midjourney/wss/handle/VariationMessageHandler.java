@@ -32,18 +32,9 @@ public class VariationMessageHandler extends MessageHandler {
 	private static final String OLD_CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Variations by <@\\d+> \\((.*?)\\)";
 	private static final String CONTENT_REGEX = "\\*\\*(.*?)\\*\\* - Variations \\(.*?\\) by <@\\d+> \\((.*?)\\)";
 
-	private Predicate<Task> taskPredicate(TaskCondition condition, String realPrompt, String prompt) {
-		return condition.and(t -> t.getPromptEn().startsWith(realPrompt) || t.getPromptEn().startsWith(prompt));
-	}
-
-	private Predicate<Task> taskPredicate2(TaskCondition condition, String realPrompt, String prompt) {
-		return condition.and(t -> t.getPromptEn().contains(realPrompt) || t.getPromptEn().startsWith(prompt));
-	}
-
 	@Override
 	public void handle(MessageType messageType, DataObject message) {
 		String content = getMessageContent(message);
-		String realPrompt;
 		if (MessageType.CREATE.equals(messageType)) {
 			UVContentParseData start = parseStart(content);
 			if (start != null) {
@@ -51,8 +42,8 @@ public class VariationMessageHandler extends MessageHandler {
 				TaskCondition condition = new TaskCondition()
 						.setActionSet(Set.of(TaskAction.VARIATION))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-				realPrompt = this.discordHelper.getRealPromptNoUrl(start.getPrompt());
-				Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, start.getPrompt()))
+				Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, start.getPrompt());
+				Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
 						.findFirst().orElse(null);
 				if (task == null) {
 					return;
@@ -66,11 +57,11 @@ public class VariationMessageHandler extends MessageHandler {
 			if (end == null) {
 				return;
 			}
-			realPrompt = this.discordHelper.getRealPromptNoUrl(end.getPrompt());
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.VARIATION))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, end.getPrompt()))
+			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, end.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
 					.findFirst().orElse(null);;
 			if (task == null) {
 				return;
@@ -85,8 +76,8 @@ public class VariationMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.VARIATION))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			realPrompt = this.discordHelper.getRealPromptNoUrl(parseData.getPrompt());
-			Task task = this.taskQueueHelper.findRunningTask(taskPredicate2(condition, realPrompt, parseData.getPrompt()))
+			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, parseData.getPrompt());
+			Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
 					.findFirst().orElse(null);
 			if (task == null) {
 				return;

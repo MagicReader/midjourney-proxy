@@ -1,5 +1,7 @@
 package com.github.novicezk.midjourney.util;
 
+import cn.hutool.crypto.digest.DigestAlgorithm;
+import cn.hutool.crypto.digest.Digester;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
@@ -37,6 +39,24 @@ public class Base64ImgUtils {
         String stream2Base64 = this.inputStream2Base64(is);
 
         return stream2Base64;
+    }
+
+    /**
+     * 图片链接转为MD5编码
+     * @param netImagePath
+     * @return
+     */
+    Digester md5Digester = new Digester(DigestAlgorithm.MD5);
+    public String generateFileUrlToMd5(String netImagePath){
+        String md5Hex = netImagePath;
+        try {
+            String base64 = generateFileUrlToBase64(netImagePath);
+            md5Hex = md5Digester.digestHex(base64);
+        } catch (Exception e) {
+            log.error("MD5转换异常", e);
+        }
+        log.info("MD5转换：{}->{}",netImagePath,md5Hex);
+        return md5Hex;
     }
 
     private String inputStream2Base64(InputStream is) throws Exception {

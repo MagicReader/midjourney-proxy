@@ -119,14 +119,24 @@ public class TaskServiceImpl implements TaskService {
     public SubmitResultVO submitBlend(Task task, List<DataUrl> dataUrls, BlendDimensions dimensions) {
         return this.taskQueueHelper.submitTask(task, () -> {
             List<String> finalFileNames = new ArrayList<>();
+            List<String> finalImageUrls = new ArrayList<>();
             for (DataUrl dataUrl : dataUrls) {
                 String taskFileName = task.getId() + "." + MimeTypeUtils.guessFileSuffix(dataUrl.getMimeType());
                 Message<String> uploadResult = this.discordServiceMap.get(task.getAssociationKey()).upload(taskFileName, dataUrl);
                 if (uploadResult.getCode() != ReturnCode.SUCCESS) {
                     return Message.of(uploadResult.getCode(), uploadResult.getDescription());
                 }
+                String finalFileName = uploadResult.getResult();
+                Message<String> sendImageResult = this.discordServiceMap.get(task.getAssociationKey()).sendImageMessage("upload image: " + finalFileName, finalFileName);
+                if (sendImageResult.getCode() != ReturnCode.SUCCESS) {
+                    return Message.of(sendImageResult.getCode(), sendImageResult.getDescription());
+                }
+                finalImageUrls.add(sendImageResult.getResult());
                 finalFileNames.add(uploadResult.getResult());
             }
+            String prompt = StringUtils.join(finalImageUrls," ");
+            task.setPrompt(prompt);
+            task.setPromptEn(prompt);
             return this.discordServiceMap.get(task.getAssociationKey()).blend(finalFileNames, dimensions);
         });
     }

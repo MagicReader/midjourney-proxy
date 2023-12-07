@@ -12,9 +12,11 @@ import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.ContentParseData;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.utils.data.DataObject;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,32 +48,27 @@ public class BlendMessageHandler extends MessageHandler {
 		if (MessageType.CREATE == messageType) {
 			if ("Waiting to start".equals(parseData.getStatus())) {
 				// 开始
-				List<String> urls = CharSequenceUtil.split(parseData.getPrompt(), " ");
+				List<String> urls = CharSequenceUtil.split(parseData.getPrompt(), "> <https");
 				if (urls.isEmpty()) {
 					return;
 				}
-				String url = getRealUrl(urls.get(0));
-//				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
-				//从url中拿到taskId,将prompt与taskId建立关联
-				String[] split = url.split("/");
-				String taskId = split[split.length - 1];
-				taskId = taskId.split("\\.")[0];
-				map.put(parseData.getPrompt(), taskId);
 				TaskCondition condition = new TaskCondition()
-						.setId(taskId)
 						.setActionSet(Set.of(TaskAction.BLEND))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
-				Task task = this.taskQueueHelper.findRunningTask(condition).findFirst().orElse(null);
+				Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, parseData.getPrompt());
+				Task task = this.taskQueueHelper.findRunningTask(taskPredicate).findFirst().orElse(null);
 				if (task == null) {
 					return;
 				}
+				map.put(parseData.getPrompt(), task.getId());
 				task.setProperty(Constants.TASK_PROPERTY_PROGRESS_MESSAGE_ID, message.getString("id"));
-				task.setPrompt(parseData.getPrompt());
-				task.setPromptEn(parseData.getPrompt());
 				task.setStatus(TaskStatus.IN_PROGRESS);
 				task.awake();
 			} else {
 				String taskId = (String) map.get(parseData.getPrompt());
+				if(StringUtils.isBlank(taskId)){
+					return;
+				}
 				// 完成
 				TaskCondition condition = new TaskCondition()
 						.setId(taskId)
@@ -88,6 +85,9 @@ public class BlendMessageHandler extends MessageHandler {
 			}
 		} else if (MessageType.UPDATE == messageType) {
 			String taskId = (String) map.get(parseData.getPrompt());
+			if(StringUtils.isBlank(taskId)){
+				return;
+			}
 			// 进度
 			TaskCondition condition = new TaskCondition()
 					.setId(taskId)
