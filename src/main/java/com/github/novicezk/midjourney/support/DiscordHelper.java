@@ -91,8 +91,11 @@ public class DiscordHelper {
 		return realPrompt;
 	}
 
+	private final String REAL_PROMPT_MD5_PREFIX = "real-prompt-md5:";
+
 	public String getRealPromptMd5(String prompt) {
-		String realPrompt = stringRedisTemplate.opsForValue().get(prompt);
+		String key = REAL_PROMPT_MD5_PREFIX + prompt;
+		String realPrompt = stringRedisTemplate.opsForValue().get(key);
 		if(StringUtils.isNotBlank(realPrompt)){
 			return realPrompt;
 		}
@@ -106,8 +109,8 @@ public class DiscordHelper {
 			realPrompt = realPrompt.replace(url, md5).trim();
 		}
 
-		stringRedisTemplate.opsForValue().set(prompt, realPrompt);
-		stringRedisTemplate.expire(prompt, 60, TimeUnit.MINUTES);
+		stringRedisTemplate.opsForValue().set(key, realPrompt);
+		stringRedisTemplate.expire(key, 2, TimeUnit.MINUTES);
 		return realPrompt;
 	}
 
