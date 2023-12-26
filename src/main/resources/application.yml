@@ -13,4 +13,6 @@ mj:
 spring:
   profiles:
     active: '@profiles.active@'
+logging:
+  config: classpath:logging/logback-spring.xml
 

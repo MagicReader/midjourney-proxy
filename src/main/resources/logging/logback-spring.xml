@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+
+    <contextName>logback</contextName>
+    <property name="app.name" value="ocqs-service" />
+    <property name="logStore.inApp" value="YES" />
+    <springProperty scope="context" name="appName" source="local.config.app.name"
+      defaultValue="appName"/>
+
+    <property name="log.path" value="${LOG_PATH}" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>@log-level@</level>
+        </filter>
+        <encoder>
+            <pattern>[%X{traceId:-},%X{spanId:-}] %d{yyyy-MM-dd HH:mm:ss} [%thread] ${appName} %-5level %logger:%L - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/%d{yyyy, aux}/%d{MM, aux}/%d{dd, aux}/application.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+            <maxHistory>8760</maxHistory> <!-- 365 day, 24 hours -->
+            <totalSizeCap>100GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] ${appName} %-5level %logger %L - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="@log-level@">
+        <appender-ref ref="console" />
+        <appender-ref ref="file" />
+    </root>
+
+    <logger name="com.github.novicezk.midjourney" level="@log-level@"/>
+
+</configuration>
