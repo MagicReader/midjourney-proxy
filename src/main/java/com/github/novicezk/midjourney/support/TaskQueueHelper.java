@@ -123,6 +123,10 @@ public class TaskQueueHelper {
             changeStatusAndNotify(task, TaskStatus.SUBMITTED);
             do {
                 task.sleep();
+                // 任务完成后，立即从运行中的任务列表中删除，防止相同提示词的任务重复匹配到某个已完成的任务上
+                if(task.getStatus() == TaskStatus.SUCCESS){
+                    this.runningTasks.remove(task);
+                }
                 changeStatusAndNotify(task, task.getStatus());
             } while (task.getStatus() == TaskStatus.IN_PROGRESS);
             log.debug("task finished, id: {}, status: {}", task.getId(), task.getStatus());
