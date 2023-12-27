@@ -32,7 +32,7 @@ public class Base64ImgUtils {
         // 创建链接
         final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setConnectTimeout(10 * 1000);
+        conn.setConnectTimeout(20 * 1000);
 
 
         InputStream is = conn.getInputStream();
