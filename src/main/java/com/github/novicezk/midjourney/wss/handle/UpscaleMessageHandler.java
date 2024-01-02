@@ -76,7 +76,7 @@ public class UpscaleMessageHandler extends MessageHandler {
 			TaskCondition condition = new TaskCondition()
 					.setActionSet(Set.of(TaskAction.UPSCALE))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
-			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, end.getPrompt());
+			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, end2.getPrompt());
 			Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
 					.min(Comparator.comparing(Task::getSubmitTime))
 					.orElse(null);
