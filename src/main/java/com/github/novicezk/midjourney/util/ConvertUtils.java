@@ -2,12 +2,31 @@ package com.github.novicezk.midjourney.util;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.github.novicezk.midjourney.enums.TaskAction;
+import eu.maxschuster.dataurl.DataUrl;
+import eu.maxschuster.dataurl.DataUrlSerializer;
+import eu.maxschuster.dataurl.IDataUrlSerializer;
 import lombok.experimental.UtilityClass;
 
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @UtilityClass
 public class ConvertUtils {
+
+	public static List<DataUrl> convertBase64Array(List<String> base64Array) throws MalformedURLException {
+		if (base64Array == null || base64Array.isEmpty()) {
+			return Collections.emptyList();
+		}
+		IDataUrlSerializer serializer = new DataUrlSerializer();
+		List<DataUrl> dataUrlList = new ArrayList<>();
+		for (String base64 : base64Array) {
+			DataUrl dataUrl = serializer.unserialize(base64);
+			dataUrlList.add(dataUrl);
+		}
+		return dataUrlList;
+	}
 
 	public static TaskChangeParams convertChangeParams(String content) {
 		List<String> split = CharSequenceUtil.split(content, " ");

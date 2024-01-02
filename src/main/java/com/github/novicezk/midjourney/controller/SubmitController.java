@@ -17,6 +17,7 @@ import com.github.novicezk.midjourney.service.TranslateService;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import com.github.novicezk.midjourney.util.BannedPromptUtils;
+import com.github.novicezk.midjourney.util.ConvertUtils;
 import com.github.novicezk.midjourney.util.MimeTypeUtils;
 import eu.maxschuster.dataurl.DataUrl;
 import eu.maxschuster.dataurl.DataUrlSerializer;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Api(tags = "任务提交")
@@ -73,18 +75,16 @@ public class SubmitController {
         if (BannedPromptUtils.isBanned(promptEn)) {
             return SubmitResultVO.fail(ReturnCode.BANNED_PROMPT, "可能包含敏感词");
         }
-        DataUrl dataUrl = null;
-        if (CharSequenceUtil.isNotBlank(imagineDTO.getBase64())) {
-            IDataUrlSerializer serializer = new DataUrlSerializer();
-            try {
-                dataUrl = serializer.unserialize(imagineDTO.getBase64());
-            } catch (MalformedURLException e) {
-                return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "basisImageBase64格式错误");
-            }
+        List<String> base64Array = Optional.ofNullable(imagineDTO.getBase64Array()).orElse(new ArrayList<>());
+        List<DataUrl> dataUrls;
+        try {
+            dataUrls = ConvertUtils.convertBase64Array(base64Array);
+        } catch (MalformedURLException e) {
+            return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "basisImage-Base64格式错误");
         }
         task.setPromptEn(promptEn);
         task.setDescription("/imagine " + prompt);
-        return this.taskService.submitImagine(task, dataUrl);
+        return this.taskService.submitImagine(task, dataUrls);
     }
 
     @ApiOperation(value = "绘图变化")

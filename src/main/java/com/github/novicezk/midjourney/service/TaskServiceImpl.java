@@ -69,25 +69,30 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public SubmitResultVO submitImagine(Task task, DataUrl dataUrl) {
+    public SubmitResultVO submitImagine(Task task, List<DataUrl> dataUrls) {
         return this.taskQueueHelper.submitTask(task, () -> {
-            if (dataUrl != null) {
+            DiscordService discordService = this.discordServiceMap.get(task.getAssociationKey());
+            List<String> imageUrls = new ArrayList<>();
+            for (DataUrl dataUrl : dataUrls) {
                 String taskFileName = task.getId() + "." + MimeTypeUtils.guessFileSuffix(dataUrl.getMimeType());
-                Message<String> uploadResult = this.discordServiceMap.get(task.getAssociationKey()).upload(taskFileName, dataUrl);
+                Message<String> uploadResult = discordService.upload(taskFileName, dataUrl);
                 if (uploadResult.getCode() != ReturnCode.SUCCESS) {
                     return Message.of(uploadResult.getCode(), uploadResult.getDescription());
                 }
                 String finalFileName = uploadResult.getResult();
-                Message<String> sendImageResult = this.discordServiceMap.get(task.getAssociationKey()).sendImageMessage("upload image: " + finalFileName, finalFileName);
+                Message<String> sendImageResult = discordService.sendImageMessage("upload image: " + finalFileName, finalFileName);
                 if (sendImageResult.getCode() != ReturnCode.SUCCESS) {
                     return Message.of(sendImageResult.getCode(), sendImageResult.getDescription());
                 }
-                task.setPrompt(sendImageResult.getResult() + " " + task.getPrompt());
-                task.setPromptEn(sendImageResult.getResult() + " " + task.getPromptEn());
+                imageUrls.add(sendImageResult.getResult());
+            }
+            if (!imageUrls.isEmpty()) {
+                task.setPrompt(String.join(" ", imageUrls) + " " + task.getPrompt());
+                task.setPromptEn(String.join(" ", imageUrls) + " " + task.getPromptEn());
                 task.setDescription("/imagine " + task.getPrompt());
                 this.taskStoreService.save(task);
             }
-            return this.discordServiceMap.get(task.getAssociationKey()).imagine(task.getPromptEn());
+            return discordService.imagine(task.getPromptEn());
         });
     }
 

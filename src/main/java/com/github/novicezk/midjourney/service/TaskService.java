@@ -16,7 +16,7 @@ public interface TaskService {
 
 	List<SubmitResultVO> submitInfo(InfoSubmitDTO infoSubmitDTO);
 
-	SubmitResultVO submitImagine(Task task, DataUrl dataUrl);
+	SubmitResultVO submitImagine(Task task, List<DataUrl> dataUrls);
 
 	SubmitResultVO submitUpscale(Task task, String targetMessageId, String targetMessageHash, int index,  int messageFlags);
 
