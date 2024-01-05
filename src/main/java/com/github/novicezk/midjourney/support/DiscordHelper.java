@@ -77,7 +77,6 @@ public class DiscordHelper {
 		return wssUrl;
 	}
 
-
 	public String getRealPrompt(String prompt) {
 		String realPrompt = prompt;
 		String regex = "<https?://\\S+>";
@@ -91,7 +90,7 @@ public class DiscordHelper {
 		return realPrompt;
 	}
 
-	private final String REAL_PROMPT_MD5_PREFIX = "real-prompt-md5:";
+	private static final String REAL_PROMPT_MD5_PREFIX = "real-prompt-md5:";
 
 	public String getRealPromptMd5(String prompt) {
 		String key = REAL_PROMPT_MD5_PREFIX + prompt;
@@ -110,7 +109,7 @@ public class DiscordHelper {
 		}
 
 		stringRedisTemplate.opsForValue().set(key, realPrompt);
-		stringRedisTemplate.expire(key, 2, TimeUnit.MINUTES);
+		stringRedisTemplate.expire(key, 20, TimeUnit.MINUTES);
 		return realPrompt;
 	}
 
