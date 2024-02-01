@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.io.IOException;
+
 
 
 @Api(tags = "自定义接口")
@@ -23,8 +23,9 @@ public class MyController {
     @ApiOperation(value = "查询URL转Base64")
     @PostMapping("/url2base64")
     public Url2base64DTO url2base64(@RequestBody Url2base64DTO dto) throws Exception {
-        String base64 = base64ImgUtils.generateFileUrlToBase64(dto.getUrl());
+        String base64 = base64ImgUtils.generateImgUrlToBase64(dto.getUrl());
         dto.setBase64(base64);
         return dto;
     }
+
 }
