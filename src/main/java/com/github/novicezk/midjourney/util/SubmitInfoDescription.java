@@ -10,6 +10,5 @@ public class SubmitInfoDescription {
     private Float fastTimeTotalHours;
     private Float fastTimeRemainPercent;
     private Integer lifetimeUsageImages;
-    private Float lifetimeUsageHours;
     private Boolean stealthMode;
 }

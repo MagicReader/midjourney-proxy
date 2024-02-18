@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 public class InfoMessageHandler extends MessageHandler{
     private static final String VISIBILITY_MODE_REGEX = "Visibility Mode\\*\\*:\\s*Stealth";
     private static final String FAST_TIME_REMAIN_REGEX = "Fast Time Remaining\\*\\*:\\s*(.*?)/(.*?)\\s*hours\\s*\\((.*?)%\\)";
-    private static final String LIFETIME_USAGE_REGEX = "Lifetime Usage\\*\\*:\\s*(.*?)\\s*images\\s*\\((.*?)\\s*hours\\)";
+    private static final String LIFETIME_USAGE_REGEX = "Lifetime Usage\\*\\*:\\s*(.*?)\\s*images";
 
     @Override
     public void handle(MessageType messageType, DataObject message) {
@@ -83,9 +83,22 @@ public class InfoMessageHandler extends MessageHandler{
                 .setFastTimeTotalHours(Float.valueOf(matcherRemain.group(2)))
                 .setFastTimeRemainPercent(Float.valueOf(matcherRemain.group(3)))
                 .setLifetimeUsageImages(Integer.valueOf(matcherUsage.group(1)))
-                .setLifetimeUsageHours(Float.valueOf(matcherUsage.group(2)))
                 .setStealthMode(stealthMode);
         return submitInfoDescription;
     }
+
+//    **User ID**:                    a529ee35-c7c9-4e9b-87ca-ac543102e0e1
+//**Subscription**:               Pro (Active yearly, renews next on <t:1723605288>)
+//**Visibility Mode**:            Stealth
+//**Fast Time Remaining**:        30.00/30.0 hours (100.00%)
+//**Lifetime Usage**:             3730 images
+//**Fast Usage**:                 760 images
+//**Turbo Usage**:                2970 images
+//**Relaxed Usage**:              0 images
+//*accurate time usage will be back soon!*
+//
+//            **Queued Jobs (fast)**:         0
+//            **Queued Jobs (relax)**:        0
+//            **Running Jobs**:               None
 
 }
