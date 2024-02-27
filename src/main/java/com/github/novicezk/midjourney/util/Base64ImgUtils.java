@@ -10,12 +10,11 @@ import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
@@ -57,7 +56,7 @@ public class Base64ImgUtils {
                         .build();
                 Response response = client.newCall(request).execute();
                 InputStream inputStream = response.body().byteStream();
-                return convertToPixelData(inputStream);
+                return inputStream2Base64(inputStream);
             } catch (Exception e) {
                 log.warn("generateImgUrlToBase64:retry->{},netImagePath->{}", retry, imgUrl, e);
                 retry++;
@@ -68,28 +67,35 @@ public class Base64ImgUtils {
     }
 
     /**
-     * 计算图片base64，只考虑像素不考虑图片信息
+     * 旧版，不支持cdn.midjourney.com图片，403
+     * 图片链接转为base64编码
+     * @param netImagePath
+     * @return
      */
-    private static String convertToPixelData(InputStream is) throws IOException {
-        BufferedImage image = ImageIO.read(is);
-        // 获取图片的宽度和高度
-        int width = image.getWidth();
-        int height = image.getHeight();
-
-        // 获取图片的像素类型
-        int pixelType = image.getType() == BufferedImage.TYPE_BYTE_GRAY ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_INT_ARGB;
-
-        // 创建一个仅包含像素信息的BufferedImage
-        BufferedImage pixelImage = new BufferedImage(width, height, pixelType);
-
-        // 将原始图片的像素复制到新图片中
-        pixelImage.getGraphics().drawImage(image, 0, 0, null);
-
-        // 将图片转换为字节数组
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ImageIO.write(pixelImage, "png", byteArrayOutputStream); // 使用PNG格式，因为它是无损的，并且通常比其他格式更小
-        // 返回字节数组
-        return Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray());
+    public String generateFileUrlToBase64(String netImagePath) throws Exception {
+        log.info("generateFileUrlToBase64:netImagePath->{}", netImagePath);
+        int retry = 0;
+        while (retry < RETRY_COUNT){
+            try {
+                URL url = new URL(netImagePath);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Referer","cdn.midjourney.com");
+                conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+                conn.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,zh-TW;q=0.8,en;q=0.7,en-US;q=0.6");
+                conn.setRequestProperty("Cookie", "__cf_bm=LjlxttFJHP20AB7eiN82k724AvrMtlMfNOIIk4y_yx8-1706687749-1-AcuRF3nMt4DzZsrG9CfeCE3n8rHq+vhD29ha8xHfFsFA3IRIa3zC7ZQSQt/lak9rYmzG6KHWoqHlXyb1w2gn1Y4=");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36");
+                conn.setConnectTimeout(10 * 1000);
+                InputStream is = conn.getInputStream();
+                return this.inputStream2Base64(is);
+            } catch (Exception e) {
+                log.warn("generateFileUrlToBase64:retry->{},netImagePath->{}", retry, netImagePath, e);
+                retry++;
+                Thread.sleep(1000);
+            }
+        }
+        throw new RuntimeException("generateFileUrlToBase64:重试多次失败.netImagePath->"+netImagePath);
     }
 
     /**
@@ -117,4 +123,30 @@ public class Base64ImgUtils {
         log.info("MD5转换：{}->{}",netImagePath, md5Hex);
         return md5Hex;
     }
+
+    private String inputStream2Base64(InputStream is) throws Exception {
+        byte[] data = null;
+        try {
+            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();
+            byte[] buff = new byte[100];
+            int rc = 0;
+            while ((rc = is.read(buff, 0, 100)) > 0) {
+                swapStream.write(buff, 0, rc);
+            }
+            data = swapStream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    throw new Exception("输入流关闭异常");
+                }
+            }
+        }
+
+        return Base64.getEncoder().encodeToString(data);
+    }
+
 }
