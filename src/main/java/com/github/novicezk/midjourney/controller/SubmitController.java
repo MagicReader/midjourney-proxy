@@ -104,11 +104,6 @@ public class SubmitController {
         }
         TaskCondition condition = new TaskCondition().setDescription(description);
         Task existTask = this.taskStoreService.findOne(condition);
-        if (existTask != null) {
-            return SubmitResultVO.of(ReturnCode.EXISTED, "任务已存在", existTask.getId())
-                    .setProperty("status", existTask.getStatus())
-                    .setProperty("imageUrl", existTask.getImageUrl());
-        }
         Task targetTask = this.taskStoreService.get(changeDTO.getTaskId());
         if (targetTask == null) {
             return SubmitResultVO.fail(ReturnCode.NOT_FOUND, "关联任务不存在或已失效");
