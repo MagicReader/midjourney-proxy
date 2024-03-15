@@ -104,7 +104,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public SubmitResultVO submitVariation(Task task, String targetMessageId, String targetMessageHash, int index, int messageFlags) {
-        return this.taskQueueHelper.submitTask(task, () -> this.discordServiceMap.get(task.getAssociationKey()).variation(targetMessageId, index, targetMessageHash, messageFlags));
+        return this.taskQueueHelper.submitTask(task, () -> this.discordServiceMap.get(task.getAssociationKey()).variation(targetMessageId, index, targetMessageHash, messageFlags, task.getAction())));
     }
 
     @Override

@@ -144,7 +144,9 @@ public class SubmitController {
                 TaskAction.UPSCALE_2X,
                 TaskAction.UPSCALE_4X).contains(changeDTO.getAction())) {
             return this.taskService.submitUpscale(task, messageId, messageHash, changeDTO.getIndex(), messageFlags);
-        } else if (TaskAction.VARIATION.equals(changeDTO.getAction())) {
+        } else if (Set.of(TaskAction.VARIATION,
+                TaskAction.VARIATION_SUBTLE,
+                TaskAction.VARIATION_STRONG).contains(changeDTO.getAction())) {
             return this.taskService.submitVariation(task, messageId, messageHash, changeDTO.getIndex(), messageFlags);
         } else {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "不支持的操作: " + changeDTO.getAction());

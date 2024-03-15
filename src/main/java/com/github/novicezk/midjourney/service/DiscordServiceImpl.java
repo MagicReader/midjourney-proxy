@@ -7,6 +7,7 @@ import com.github.novicezk.midjourney.enums.BlendDimensions;
 import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.result.Message;
 import com.github.novicezk.midjourney.util.UpsacleUtils;
+import com.github.novicezk.midjourney.util.VariationUtils;
 import eu.maxschuster.dataurl.DataUrl;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -82,13 +83,15 @@ public class DiscordServiceImpl implements DiscordService {
     }
 
     @Override
-    public Message<Void> variation(String messageId, int index, String messageHash, int messageFlags) {
+    public Message<Void> variation(String messageId, int index, String messageHash, int messageFlags, TaskAction taskAction) {
         String paramsStr = this.variationParamsJson.replace("$guild_id", this.discordGuildId)
                 .replace("$channel_id", this.discordChannelId)
                 .replace("$session_id", this.discordSessionId)
                 .replace("$message_id", messageId)
                 .replace("$index", String.valueOf(index))
-                .replace("$message_hash", messageHash);
+                .replace("$message_hash", messageHash)
+                .replace("$var_key", VariationUtils.getVarKey(taskAction))
+                .replace("$solo", VariationUtils.getSolo(taskAction));
         paramsStr = new JSONObject(paramsStr).put("message_flags", messageFlags).toString();
         return postJsonAndCheckStatus(paramsStr);
     }
