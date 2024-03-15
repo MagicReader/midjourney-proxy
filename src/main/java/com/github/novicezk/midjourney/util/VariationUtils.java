@@ -16,7 +16,7 @@ public class VariationUtils {
         else if(taskAction.equals(TaskAction.VARIATION_STRONG)){
             return "high_variation";
         }
-        return null;
+        return "";
     }
 
     public static String getSolo(TaskAction taskAction) {

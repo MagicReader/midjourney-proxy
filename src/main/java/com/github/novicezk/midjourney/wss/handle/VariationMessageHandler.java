@@ -40,7 +40,7 @@ public class VariationMessageHandler extends MessageHandler {
 			if (start != null) {
 				// 开始
 				TaskCondition condition = new TaskCondition()
-						.setActionSet(Set.of(TaskAction.VARIATION))
+						.setActionSet(Set.of(TaskAction.VARIATION,TaskAction.VARIATION_SUBTLE,TaskAction.VARIATION_STRONG))
 						.setStatusSet(Set.of(TaskStatus.SUBMITTED));
 				Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, start.getPrompt());
 				Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
@@ -58,7 +58,7 @@ public class VariationMessageHandler extends MessageHandler {
 				return;
 			}
 			TaskCondition condition = new TaskCondition()
-					.setActionSet(Set.of(TaskAction.VARIATION))
+					.setActionSet(Set.of(TaskAction.VARIATION,TaskAction.VARIATION_SUBTLE,TaskAction.VARIATION_STRONG))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
 			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, end.getPrompt());
 			Task task = this.taskQueueHelper.findRunningTask(taskPredicate)
@@ -74,7 +74,7 @@ public class VariationMessageHandler extends MessageHandler {
 				return;
 			}
 			TaskCondition condition = new TaskCondition()
-					.setActionSet(Set.of(TaskAction.VARIATION))
+					.setActionSet(Set.of(TaskAction.VARIATION,TaskAction.VARIATION_SUBTLE,TaskAction.VARIATION_STRONG))
 					.setStatusSet(Set.of(TaskStatus.SUBMITTED, TaskStatus.IN_PROGRESS));
 			Predicate<Task> taskPredicate = this.discordHelper.taskPredicate(condition, parseData.getPrompt());
 			Task task = this.taskQueueHelper.findRunningTask(taskPredicate)

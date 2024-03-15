@@ -22,7 +22,7 @@ public class UpsacleUtils {
         else if(taskAction.equals(TaskAction.UPSCALE_4X)){
             return "upsample_v5_4x";
         }
-        return null;
+        return "";
     }
 
     public static String getSolo(TaskAction taskAction) {
