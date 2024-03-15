@@ -93,7 +93,15 @@ public class SubmitController {
         if (CharSequenceUtil.isBlank(changeDTO.getTaskId())) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "taskId不能为空");
         }
-        if (!Set.of(TaskAction.UPSCALE, TaskAction.VARIATION, TaskAction.REROLL).contains(changeDTO.getAction())) {
+        if (!Set.of(TaskAction.UPSCALE,
+                TaskAction.UPSCALE_SUBTLE,
+                TaskAction.UPSCALE_CREATIVE,
+                TaskAction.UPSCALE_2X,
+                TaskAction.UPSCALE_4X,
+                TaskAction.VARIATION,
+                TaskAction.VARIATION_SUBTLE,
+                TaskAction.VARIATION_STRONG,
+                TaskAction.REROLL).contains(changeDTO.getAction())) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "action参数错误");
         }
         String description = "/up " + changeDTO.getTaskId();
@@ -102,8 +110,6 @@ public class SubmitController {
         } else {
             description += " " + changeDTO.getAction().name().charAt(0) + changeDTO.getIndex();
         }
-        TaskCondition condition = new TaskCondition().setDescription(description);
-        Task existTask = this.taskStoreService.findOne(condition);
         Task targetTask = this.taskStoreService.get(changeDTO.getTaskId());
         if (targetTask == null) {
             return SubmitResultVO.fail(ReturnCode.NOT_FOUND, "关联任务不存在或已失效");
@@ -111,7 +117,16 @@ public class SubmitController {
         if (!TaskStatus.SUCCESS.equals(targetTask.getStatus())) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "关联任务状态错误");
         }
-        if (!Set.of(TaskAction.IMAGINE, TaskAction.VARIATION, TaskAction.BLEND).contains(targetTask.getAction())) {
+        if (!Set.of(TaskAction.IMAGINE,
+                TaskAction.VARIATION,
+                TaskAction.BLEND,
+                TaskAction.UPSCALE,
+                TaskAction.UPSCALE_CREATIVE,
+                TaskAction.UPSCALE_SUBTLE,
+                TaskAction.UPSCALE_2X,
+                TaskAction.UPSCALE_4X,
+                TaskAction.VARIATION_SUBTLE,
+                TaskAction.VARIATION_STRONG).contains(targetTask.getAction())) {
             return SubmitResultVO.fail(ReturnCode.VALIDATION_ERROR, "关联任务不允许执行变化");
         }
         Task task = this.taskService.newTask(changeDTO, targetTask.getAssociationKey());
@@ -123,7 +138,11 @@ public class SubmitController {
         int messageFlags = targetTask.getPropertyGeneric(Constants.TASK_PROPERTY_FLAGS);
         String messageId = targetTask.getPropertyGeneric(Constants.TASK_PROPERTY_MESSAGE_ID);
         String messageHash = targetTask.getPropertyGeneric(Constants.TASK_PROPERTY_MESSAGE_HASH);
-        if (TaskAction.UPSCALE.equals(changeDTO.getAction())) {
+        if (Set.of(TaskAction.UPSCALE,
+                TaskAction.UPSCALE_SUBTLE,
+                TaskAction.UPSCALE_CREATIVE,
+                TaskAction.UPSCALE_2X,
+                TaskAction.UPSCALE_4X).contains(changeDTO.getAction())) {
             return this.taskService.submitUpscale(task, messageId, messageHash, changeDTO.getIndex(), messageFlags);
         } else if (TaskAction.VARIATION.equals(changeDTO.getAction())) {
             return this.taskService.submitVariation(task, messageId, messageHash, changeDTO.getIndex(), messageFlags);
@@ -177,6 +196,5 @@ public class SubmitController {
         task.setDescription("/blend " + task.getId() + " " + dataUrlList.size());
         return this.taskService.submitBlend(task, dataUrlList, blendDTO.getDimensions());
     }
-
 
 }

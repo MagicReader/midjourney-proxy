@@ -29,6 +29,7 @@ public class UserMessageListener {
         if (ignoreAndLogMessage(data, messageType)) {
             return;
         }
+        log.info("onMessage->{}", data);
         for (MessageHandler messageHandler : this.messageHandlers) {
             messageHandler.handle(messageType, data);
         }

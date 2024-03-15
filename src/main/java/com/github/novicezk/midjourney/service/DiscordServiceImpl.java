@@ -4,7 +4,9 @@ package com.github.novicezk.midjourney.service;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.github.novicezk.midjourney.ReturnCode;
 import com.github.novicezk.midjourney.enums.BlendDimensions;
+import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.result.Message;
+import com.github.novicezk.midjourney.util.UpsacleUtils;
 import eu.maxschuster.dataurl.DataUrl;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -66,13 +68,15 @@ public class DiscordServiceImpl implements DiscordService {
     }
 
     @Override
-    public Message<Void> upscale(String messageId, int index, String messageHash, int messageFlags) {
+    public Message<Void> upscale(String messageId, int index, String messageHash, int messageFlags, TaskAction taskAction) {
         String paramsStr = this.upscaleParamsJson.replace("$guild_id", this.discordGuildId)
                 .replace("$channel_id", this.discordChannelId)
                 .replace("$session_id", this.discordSessionId)
                 .replace("$message_id", messageId)
                 .replace("$index", String.valueOf(index))
-                .replace("$message_hash", messageHash);
+                .replace("$message_hash", messageHash)
+                .replace("$up_key", UpsacleUtils.getUpKey(taskAction))
+                .replace("$solo", UpsacleUtils.getSolo(taskAction));
         paramsStr = new JSONObject(paramsStr).put("message_flags", messageFlags).toString();
         return postJsonAndCheckStatus(paramsStr);
     }

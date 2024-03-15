@@ -30,4 +30,20 @@ public enum TaskAction {
 	 * 查询账号info.
 	 */
 	INFO,
+	/**
+	 * ZOOM_OUT.
+	 */
+	ZOOM_OUT,
+	/**
+	 * UPSCALE.
+	 */
+	UPSCALE_SUBTLE,
+	UPSCALE_CREATIVE,
+	UPSCALE_2X,
+	UPSCALE_4X,
+	/**
+	 * VARIATION.
+	 */
+	VARIATION_SUBTLE,
+	VARIATION_STRONG
 }

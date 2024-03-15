@@ -2,6 +2,7 @@ package com.github.novicezk.midjourney.service;
 
 
 import com.github.novicezk.midjourney.enums.BlendDimensions;
+import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.result.Message;
 import eu.maxschuster.dataurl.DataUrl;
 
@@ -12,7 +13,7 @@ public interface DiscordService {
 
 	Message<Void> imagine(String prompt);
 
-	Message<Void> upscale(String messageId, int index, String messageHash, int messageFlags);
+	Message<Void> upscale(String messageId, int index, String messageHash, int messageFlags, TaskAction taskAction);
 
 	Message<Void> variation(String messageId, int index, String messageHash, int messageFlags);
 
